@@ -1,0 +1,22 @@
+{
+    "firmware": {
+        "mode": "mbedaes",
+        "fixed_key": true,
+        "modulate": false
+    },
+    "collection": {
+        "target_freq": 2.5e9,
+        "sampling_rate": 5e6,
+        "num_points": 10,
+        "num_traces_per_point": 500,
+        "bandpass_lower": 0.89e6,
+        "bandpass_upper": 1.06e6,
+        "lowpass_freq": 10e3,
+        "drop_start": 0.029,
+        "trigger_rising": false,
+        "trigger_offset": 37e-6,
+        "signal_length": 110e-6,
+        "template_name": "templates/villa_mebd.npy",
+        "min_correlation": 0.00
+    }
+}

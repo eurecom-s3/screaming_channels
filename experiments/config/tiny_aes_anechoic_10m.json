@@ -1,0 +1,22 @@
+{
+    "firmware": {
+        "mode": "tinyaes",
+        "fixed_key": true,
+        "modulate": true
+    },
+    "collection": {
+        "target_freq": 2.528e9,
+        "sampling_rate": 5e6,
+        "num_points": 5e6,
+        "num_traces_per_point": 1000,
+        "bandpass_lower": 1.95e6,
+        "bandpass_upper": 2.02e6,
+        "lowpass_freq": 5e3,
+        "drop_start": 50e-3,
+        "trigger_rising": true,
+        "trigger_offset": 100e-6,
+        "signal_length": 300e-6,
+        "template_name": "templates/tiny_anechoic_10m.npy",
+        "min_correlation": 0.00
+    }
+}

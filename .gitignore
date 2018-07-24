@@ -1,0 +1,7 @@
+*.sw?
+*.pyc
+covMatrix*
+meanMatrix*
+POIs*
+P_k*
+_build

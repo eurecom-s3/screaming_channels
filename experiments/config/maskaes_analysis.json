@@ -1,0 +1,23 @@
+{
+    "firmware": {
+        "mode": "maskaes_slow",
+        "mask_mode": 0,
+        "fixed_key": true,
+        "modulate": false
+    },
+    "collection": {
+        "target_freq": 2.464e9,
+        "sampling_rate": 5e6,
+        "num_points": 5e6,
+        "num_traces_per_point": 200,
+        "bandpass_lower": 1.65e6,
+        "bandpass_upper": 1.75e6,
+        "lowpass_freq": 5e3,
+        "drop_start": 0.048,
+        "trigger_rising": false,
+        "trigger_offset": 100e-6,
+        "signal_length": 400e-6,
+        "template_name": "./templates/maskaes_0_200tpp_cable_hackrf.npy",
+        "min_correlation": 0.00
+    }
+}
