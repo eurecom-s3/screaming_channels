@@ -14,6 +14,11 @@ Please feel free to contact us ([Giovanni Camurati](mailto://camurati@eurecom.fr
 If you wish to contribute, please have a look at the [Contribution
 Guideline](#Guideline) below.
 
+# Traces
+
+If you'd like to play with our attack scripts but don't have the hardware to
+collect traces yourself, you can download our [example traces](https://drive.google.com/drive/folders/1W17IOGQb7uok8H0WvLJOEchrAusZvCW5).
+
 # Index
 
 * [License](#License)
