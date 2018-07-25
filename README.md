@@ -2,7 +2,7 @@
 
 Welcome to the Screaming Channels project!
 
-This repository contains all what you need to reproduce our findings about radio side channels in mixed-signal chips.
+This repository contains all that is needed to reproduce our findings on radio side channels in mixed-signal chips.
 For more information you can also have a look at:
 
 * [Paper to appear at CCS 2018](http://s3.eurecom.fr/docs/ccs18_camurati_preprint.pdf)
@@ -11,13 +11,8 @@ For more information you can also have a look at:
 
 Please feel free to contact us ([Giovanni Camurati](mailto://camurati@eurecom.fr)) for any comment, issue, or question.
 
-If you wish to contribute, please follow this [Contribution
-Guideline](Contribution Guideline)
-
-# Warning
-
-This repository contains a large number of traces, and may take a while to
-download.
+If you wish to contribute, please have a look at the [Contribution
+Guideline](#Guideline) below.
 
 # Index
 
@@ -65,7 +60,7 @@ along with screaming_channels.  If not, see <http://www.gnu.org/licenses/>.
 
     .
     ├── firmware                                Firmware on the device
-    │   ├── blenano2                            Folder for the BLE Nano v2 example example
+    │   ├── blenano2                            Folder for the BLE Nano v2 example
     │   ├── main.c                              The main application (radio settings, crypto)
     │   ├── boards.h                            Definition of different boards
     │   ├── rblnano2.h                          Board configuration file for the BLE Navo v2
@@ -75,18 +70,17 @@ along with screaming_channels.  If not, see <http://www.gnu.org/licenses/>.
     │   ├── config                              Sample configuration files for collection
     │   ├── templates                           Sample trace template files for collection
     │   ├── tra_templates                       Sample templates for the attacks
-    │   ├── setup.py                            Setup file to install our tools
-    │   └── src                                 Source code of the our tools
+    │   └── src                                 Source code of our tools
+    │       ├── setup.py                        Setup file to install the tools
     │       └── screamingchannels
     │           ├── reproduce.py                Script for experiments, including trace collection
     │           ├── attack.py                   Script for attacks
     │           ├── analyze.py                  Module for processing traces
     │           ├── load.py                     Module for loading traces
     │           └── sc2daredevil.py             Script to convert traces to Daredevil format
-    ├── images                                  Images for this file
-    ├── traces                                  Sample traces that we have collected
+    ├── images                                  Images for this README
     ├── COPYRIGHT                               The copyright 
-    ├── LICENCE                                 A copy of the GNU GPL v3.0 license
+    ├── LICENCE                                 A copy of the GNU GPLv3 license
     └── README.md                               This file
  
 ## <a name="Story"></a>Long story short
@@ -96,7 +90,7 @@ along with screaming_channels.  If not, see <http://www.gnu.org/licenses/>.
 2. The digital part (noisy) is close to the analog/RF part (noise sensitive)
 3. Propagation (e.g., substrate / power supply coupling to the Frequency Synthesizer / Power Amplifier)
 4. Sensitive information regarding the digital activity flows to the radio where
-   it is picked and transmitted
+   it is picked up and transmitted
 5. Side-channel attacks possible at a considerable distance
 
 ## <a name="code"></a>Using the code
@@ -115,19 +109,19 @@ To use this repository you will need:
    will flash the custom firmware. The firmware can control the radio, run
    simple loops, or call software or hardware AES encryptions. With simple
    changes to the header files, you can also run it on other nRF52832 based
-   devices. You can also write your own firmware, keeping the same API, to
-   experiment with other chips.
+   devices. You can also write your own firmware, keeping the same serial API,
+   to experiment with other chips.
 
 2. A Software Defined Radio. Any radio which can listen at 2.4GHz and sample at
    5MHz should be enough. We have conducted our experiments with a [HackRF](https://greatscottgadgets.com/hackrf/) and,
-   especially for the long range attacks, a [USRP N210](https://www.ettus.com/product/details/UN210-KIT) populated with a
+   especially for the long range attacks, a [USRP N210](https://www.ettus.com/product/details/UN210-KIT) populated with an
    [SBX](https://www.ettus.com/product/details/SBX) daughter board. Our code
    also supports the [USRP B200 mini](https://kb.ettus.com/B200/B210/B200mini/B205mini) and the [BladeRF](https://nuand.com/) (complete attack not tested yet with B200 mini or BladeRF).
    In general, it is very easy to add support for any radio which is supported
    in GNU Radio.
 
-3. Short range attacks may succeed with a simple off-the-shelf WIFI or BT
-   antenna. For the long range attacks, a directive high-gain antenna is
+3. Short range attacks may succeed with a simple off-the-shelf WiFi or BT
+   antenna. For the long range attacks, a directional high-gain antenna is
    important. We use a [TP-Link TL-ANT2424B](https://www.tp-link.com/us/products/details/cat-5067_TL-ANT2424B.html).
 
 4. You may want to add one or more low-noise amplifiers (we often use two 
@@ -143,7 +137,7 @@ To use this repository you will need:
    Intel Core i7-4700MQ 2.4GHz, 12GB RAM, Ubuntu16.04 LTS, USB3.0 external SSD
    Drive.
 
-7. Refer to the single sections for a description of the required software
+7. Refer to the individual sections for a description of the required software
    dependencies.
 
 ### <a name="Firmware"></a>Firmware
@@ -151,30 +145,31 @@ To use this repository you will need:
 For this part you need:
 
 1. A toolchain for Arm, we use [gcc-arm-none-eabi-7-2017-q4-major](https://developer.arm.com/open-source/gnu-toolchain/gnu-rm/downloads).
-1. A tool to communicate with the device, e.g. ```minicom```.
+1. A tool to communicate with the device, e.g. `minicom`.
 
 Let's first get the SDK and copy our files to the right folders. We also need to
 export an environment variable with the path to the SDK.
 
 ```
 cd $SCREAMING_CHANNELS_PATH/screaming_channels/firmware
-wget
-https://www.nordicsemi.com/eng/nordic/download_resource/59011/68/92912988/116085
+wget https://www.nordicsemi.com/eng/nordic/download_resource/59011/68/92912988/116085
 unzip 116085
 rm 116085
 cp boards.h nRF5_SDK_14.2.0_17b948a/components/boards/
 cp Makefile.posix nRF5_SDK_14.2.0_17b948a/components/toolchain/gcc
-cp rblnano2.h  nRF5_SDK_14.2.0_17b948a/components/boards/
+cp rblnano2.h nRF5_SDK_14.2.0_17b948a/components/boards/
 ```
 
 Now we can compile any application, including our custom firmware. Note that we
-have to pass the path the toolchain with the ```GNU_INSTALL_ROOT``` option.
+have to pass the path to the toolchain with the `GNU_INSTALL_ROOT` option.
 
 ```
-make GNU_INSTALL_ROOT= $GCC_PATH/gcc-arm-none-eabi-7-2017-q4-major/bin/ -C blenano2/blank/armgcc
+make GNU_INSTALL_ROOT=$GCC_PATH/gcc-arm-none-eabi-7-2017-q4-major/bin/ -C blenano2/blank/armgcc
 ```
 
-To program the device, we can simply copy the binary there.
+To program the device, we can simply copy the binary there. (Depending on your
+operating system, the device might be mounted elsewhere or require a manual
+mount command.)
 
 ```
 cp blenano2/blank/armgcc/_build/nrf52832_xxaa.hex /media/$USER/DAPLINK/
@@ -186,11 +181,11 @@ Finally, we can connect to the device (you may want to add a USB rule for it).
 minicom -D /dev/ttyACM0
 ```
 
-If you enter ```h``` A self-explanatory menu should appear as follows.
+If you enter `h` A self-explanatory menu should appear as follows.
 You will find the commands to control the radio as well as those to run
 different types of software or hardware encryption. Another important option is
 the one that controls the output power. Usually, for better results, we set it
-to the maximum power (```p0``` which corresponds to +4dBm). However, be careful
+to the maximum power (`p0` which corresponds to +4dBm). However, be careful
 and make sure your radio setup can handle the power, especially if you decide to
 replace the antennas with a direct cable connection.
 
@@ -251,20 +246,20 @@ w: Enter aes_masked mode
    q: Quit aes_masked mode
 ```
 
-To exit from ```minicom``` simply press ```CTRL-a x```.
+To exit from `minicom` simply press `CTRL-a x`.
 
-We suggest you to play around with this menu and a spectrum analyzer (or simply
-your SDR) and to observe what we describe in our paper.
+We suggest you play around with this menu and a spectrum analyzer (or simply
+your SDR) and observe what we describe in our paper.
 For example, you can tune to 2.464GHz (carrier frequency of channel 0 + clock
-frequency) and press ```h```, you will not see
-anything. But if you turn on a continuous TX wave by pressing ```c``` and then
-press ```h```, you will see the corresponding noise.
+frequency) and press `h`; you will not see
+anything yet. But if you turn on a continuous TX wave by pressing `c` and then
+press `h`, you will see the corresponding noise.
 You can also write your own functions and experiment.
 
 ### <a name="Collection"></a>Trace collection
 
 To start, you first have to install the "Screaming Channels tools".
-You can use the
+You can use
 
 ```
 cd experiments/src/
@@ -276,11 +271,11 @@ cd experiments/src/
 python2 setup.py install [--user]
 ```
 
-Now you should be able to run ```sc-experiment``` and ```sc-attack```.
+Now you should be able to run `sc-experiment` and `sc-attack`.
 The first one is for trace collection and other experiments, whereas the second
 one is for running the attacks.
 
-In this part we focus on ```sc-experiment```, for trace collection. Let's
+In this part we focus on `sc-experiment`, for trace collection. Let's
 analyze an example.
 
 First, we want to collect a single ecryption, to plot the data and tune the
@@ -290,7 +285,7 @@ cm, and you should be able to observe a clean AES trace. (The same command
 should
 work also at several meters, but in this case you may need a better antenna,
 amplifiers, some more careful tuning of the configuration, etc. So we suggest
-you to start with something simple and well under control, without other devices
+to start with something simple and well under control, without other devices
 on the same channel, etc.)
 
 ```
@@ -299,10 +294,10 @@ cd experiments
 sc-experiment --radio=HackRF --device=/dev/ttyACM0 collect config/example_collection_plot.json ../traces/example_collection_data --plot
 ```
 
-Note that before running the previous command, you may want to set the output
+Note that, before running the previous command, you may want to set the output
 power to the maximum (always be careful about the
-maximum ratings of your setup): connect ```minicom -D /dev/ttyACM0``` and send
-```p0```. You can automate this by adding it to the ```reproduce.py``` script. 
+maximum ratings of your setup): connect `minicom -D /dev/ttyACM0` and send
+`p0`. You can automate this by adding it to the `reproduce.py` script. 
 
 Here is what the output should look like. The first subplot is the time-domain
 trace, the second one is a spectrogram, the third one is the power spectrum,
@@ -315,7 +310,7 @@ follow.
 ![Extraction](images/collect_plot.png)
 
 The most important part of the command is the configuration file. The
-config/example_collection_plot.json was derived from our attack at 5 m in an
+`config/example_collection_plot.json` was derived from our attack at 5 m in an
 anechoic room. In the following, we will explain the main parameters and how to
 find them in case none of the provided configuration files is suitable for your
 case, e.g., because you attack other AES implementations.
@@ -347,20 +342,20 @@ Here is a copy of the configuration file.
 }
 ```
 
-The first part, ```firmware```, configures the firmware on the device.
-The ```mode``` selects the software or hardware AES implementation to use,
-the ```fixed_key``` option decides whether to keep the same key at each
-encryption or not, and ```modulate``` choses between modulated radio
+The first part, `firmware`, configures the firmware on the device.
+The `mode` selects the software or hardware AES implementation to use,
+the `fixed_key` option decides whether to keep the same key at each
+encryption or not, and `modulate` choses between modulated radio
 transmission of packets or transmission of a continuous wave.
 
-The second part, ```collection```, lets you tune the parameters for trace
+The second part, `collection`, lets you tune the parameters for trace
 extraction.
 
 Here is a visual explanation of the parameters on a zoom of the plot that we saw
 before. The main point is setting the parameters to use a frequency component as
 trigger for extraction. This was inspired by [RSA-SDR](https://github.com/bolek42/rsa-sdr).
-The ```template_name``` refers to a reference trace used for
-fine grained alignment.
+The `template_name` refers to a reference trace used for
+fine-grained alignment.
 
 ![Extraction with explanation of the parameters](images/collect_plot_explanation.jpg)
 
@@ -368,51 +363,51 @@ Here follows a brief explanation of the procedure to set all the collection
 parameters. This is useful if you cannot use the configuration files we provide,
 e.g., because your setup is different.
 
-1. Use the ```--plot``` parameter to plot 4 subplots
+1. Use the `--plot` parameter to plot 4 subplots.
 
-2. Use the ```--average-out=/tmp/template.npy``` option, its use will be clearer
+2. Use the `--average-out=/tmp/template.npy` option, its use will be clearer
    later.
 
-3. Setting ```modulate``` to false (continuous wave instead of packets) may
+3. Setting `modulate` to false (continuous wave instead of packets) may
    simplify the procedure in some cases.
 
-4. Set ```num_points``` to 1 and number of traces per point to a little number,
-   usually 100 to 200. We put a limit at 300 in case the ```--plot``` option is on,
+4. Set `num_points` to 1 and number of traces per point to a small number,
+   usually 100 to 200. We put a limit at 300 in case the `--plot` option is on,
    because the plot is resource consuming and may be too much for your machine.
    However, in some cases it may be necessary/useful/possible to plot with more
    than 300 points. In this case, just disable the assertion that will
-   fail in ```reproduce.py```.
+   fail in `reproduce.py`.
 
-5. Set the ```template``` parameter to "". We will generate this file later.
-   Alternatively, use one of the provided templates in the ```templates```
+5. Set the `template` parameter to `null`. We will generate this file later.
+   Alternatively, use one of the provided templates in the `templates`
    folder.
 
-6. You can see a ```drop_start``` parameter in config.json to drop the transient at
+6. You can see a `drop_start` parameter in config.json to drop the transient at
    the beginning of the trace. You can start by 0 (no cut) and then cut it to the
    desired amount after visual inspection (you should be able to easily spot where
    the regular encryptions start after  an initial transient)
 
 7. Run the collection. At this point in time, you need to care only about the two first subplots,
    if the next ones give errors, at worst comment the corresponding
-   code in ```analyze.py```.
+   code in `analyze.py`.
 
 8. Now, by looking at spectrogram, you should be able to distinguish some frequency component that appears 
    regularly during (or between) encryptions. Use the two filter frequency in the 
-   .json (```bandpass_lower``` and ```bandpass_upper```) to isolate such component
-   (bandpass around it) and low pass filter it (```lowpass_freq```). The low-pass 
+   JSON (`bandpass_lower` and `bandpass_upper`) to isolate such component
+   (bandpass around it) and low pass filter it (`lowpass_freq`). The low-pass 
    frequency is much lower than the lower band-pass, but higher than the frequency 
    at which the encryptions repeat. The result will be a ‘square’ signal roughly 
    indicating the encryptions. It is plotted in greenish in the first subplot. 
    The brownish signal is the average of this square wave. The code finds the 
-   (rising/falling) intersections and consider them as starts of the encryption, 
-   marked with a vertical red line. You have a parameter (```trigger_rising```) to chose rising/falling, 
-   and a parameter to set an offset from the intersection point (```trigger_offset```). Use them to move 
-   the red line to a convenient point before the first round, I suggest a point in 
-   the first part of the key schedule ( identifying key schedule and rounds should 
-   be easy if the signal is good). Then, there is a length parameter (```signal_length```) to tune to move 
-   the end of the extraction window, that you can see as a green vertical line in 
-   the first subplot. Set it after the first round, I suggest after the second. 
-   The final result in the first subplot should be ‘num traces per point’ windows 
+   (rising/falling) intersections and considers them starts of the encryption, 
+   marked with a vertical red line. You have a parameter (`trigger_rising`) to chose rising/falling, 
+   and a parameter to set an offset from the intersection point (`trigger_offset`). Use them to move 
+   the red line to a convenient point before the first round, we suggest a point in 
+   the first part of the key schedule (identifying key schedule and rounds should 
+   be easy if the signal is good). Then, there is a length parameter (`signal_length`) to tune to move 
+   the end of the extraction window, which you can see as a green vertical line in 
+   the first subplot. Set it after the first round, we suggest after the second. 
+   The final result in the first subplot should be `num_traces_per_point` windows 
    (each marked by red and green vertical lines), each roughly enclosing the 
    first round of an encryption.
 
@@ -420,7 +415,7 @@ e.g., because your setup is different.
    windows and further finely aligned with cross correlation. The first time set 
    the template to null and this step will use the first window as template. If 
    the result is good (aligned traces, clear average in the fourth subplot), 
-   you can take the file saved with ```—average-out```, and use it as template for 
+   you can take the file saved with `—average-out`, and use it as template for 
    the next times.
 
 10.  Once you have a good template, try increasing the number of traces per point, 
@@ -429,8 +424,8 @@ e.g., because your setup is different.
     In general, it’s better to set ulimit. 
 
 Though initially painful, the settings are relatively stable for a given configuration and small variations. 
-Once you are ready with the configuration, disable the ```--plot``` option, and
-increase the ```num_points``` to a large number. Beware that the collection
+Once you are ready with the configuration, disable the `--plot` option, and
+increase the `num_points` to a large number. Beware that the collection
 generates random plaintexts and key and cannot be restarted, and the number of
 traces cannot be increased later. So, for the first time in a given
 configuration, it is better to set a large number, and kill the collection as
@@ -442,8 +437,7 @@ may take a while, the script will tell you the expected duration.
 
 ### <a name="Attacks"></a>Attacks
 
-To start, you first have to install the "Screaming Channels tools".
-You can use the
+If you haven't installed the tools yet, do with either
 
 ```
 cd experiments/src/
@@ -455,33 +449,29 @@ cd experiments/src/
 python2 setup.py install [--user]
 ```
 
-Now you should be able to run ```sc-experiment``` and ```sc-attack```.
-The first one is for trace collection and other experiments, whereas the second
-one is for running the attacks.
-
 There are two attacks available (code based on the [ChipWhisperer](https://newae.com/tools/chipwhisperer/)):
 
 1. Correlation Radio Attack (CRA), equivalent to a Correlation Power Attack.
-2. Template Radio Attack (TRA), equivalent to a Template Radio Attack
+2. Template Radio Attack (TRA), equivalent to a Template Power Attack
 
 Let's first play with the CRA. You can either use your own traces or use the
 prerecorded ones as we do here. The main parameters for the attack are the number of traces
-```--num-traces``` (the maximum available if you put 0), and the attack window
-defined by ```--start-point``` and ```--end-point``` (The entire trace if you do
-not specify them). To chose the window, you can first plot (```--plot```) the
+`--num-traces` (the maximum available if you pass 0), and the attack window
+defined by `--start-point` and `--end-point` (or the entire trace if you do
+not specify them). To chose the window, you can first plot (`--plot`) the
 traces. The tool will first show you all the traces aligned on the same plot
-(careful if they are many) and then the Sum of Absolute Differences (which
-should be higher where the traces differ e.g. because of the key). Use the two
+(careful if there are many of them) and then the Sum of Absolute Differences (which
+should be higher where the traces differ, e.g. because of the key). Use the two
 plots to manually identify the first round of AES, at the output of the SBox.
-The attack works better if you do it, because we eliminate a lot of points which
+The attack works better this way, because we eliminate a lot of points which
 slow down the processing and add noise.
 
-Follows an example. In this case we do not really need to tune the window to
-make it work, but you can play with it. Moreover, we use a ```name``` parameter.
+Let's look at an example. In this case we do not really need to tune the window to
+make it work, but you can play with it. Moreover, we use a `name` parameter.
 This is necessary only if the name parameter was used also during collection.
-We keep it for retrocompatibility, but we think that it is not very useful and
-you can just don't use it for your collections. You may want to use the --plot
-paramenter only with a few traces, and then run the attack with the big number
+We keep it for backward compatibility, but we think that it is not very useful and
+you can just ignore it for your own collections. You may want to use the `--plot`
+parameter only with a few traces, and then run the attack with the big number
 of traces without plotting. The shape is slightly different here, because
 mbedtls AES is different that TinyAES, and because we add a preamble before
 encrypting to make alignment easier.
@@ -524,16 +514,16 @@ NUMBER OF CORRECT BYTES: 16
 Let's now try a template attack. If you want to try it with your traces, you
 need to collect two sets: a template set with a very large number of traces, and
 an attack set with a smaller number. In this example we will use the traces we
-have collected in the anechoic room at 10 meters, with the ```config/tiny_aes_anechoic_10m_080618.json```
-file that you can find in this repo. The code under attack is TinyAES.
+have collected in the anechoic room at 10 meters, with the `config/tiny_aes_anechoic_10m_080618.json`
+file that you can find in this repository. The code under attack is TinyAES.
 
 First, we use the template set to create a template. We first create a folder
 where we can store the template. Again we could set the window, but we don't
-need it. The template attack first uses the Sum of Absolute Differences SOAD to
+need it. The template attack first uses the Sum of Absolute Differences (SOAD) to
 detect the points of interest, that is the point of the trace that "leak". They
 are simply the peaks of the SOAD. You can configure how many peaks you want with
-```--num-pois``` and the minimum distance between adjacent peaks with
-```--poi-spacing```. Note that the number of traces is very large, so it is
+`--num-pois` and the minimum distance between adjacent peaks with
+`--poi-spacing`. Note that the number of traces is very large, so it is
 better to use the plot option on a smaller subset. Besides plotting the average
 trace, the script will also plot the SOAD, where you will clearly see a peak for
 each byte of the key.
@@ -555,10 +545,10 @@ Now run without plotting with more traces.
 sc-attack --data-path=../traces/tinyaes_anechoic_10m_080618_template --start-point=0 --end-point=0 --num-traces=129661 tra_create tra_templates/my_template --num-pois=10 --poi-spacing=1
 ```
 
-Once the template is ready, we can run the actual attack. If you want, you can
+Once the template is ready, we can run the actual attack. If you want you can
 skip the previous step and directly use the template provided
-in ```tra_templates/template_anechoic_10m_080618```. Note 
-that ```--num-traces=0``` will simply take all the traces.
+in `tra_templates/template_anechoic_10m_080618`. Note 
+that `--num-traces=0` will simply take all the traces.
 
 ```
 sc-attack --data-path=../traces/tinyaes_anechoic_10m_080618_attack --start-point=0 --end-point=0 --num-traces=0 tra_attack tra_templates/my_template
@@ -592,35 +582,35 @@ NUMBER OF CORRECT BYTES: 16
 
 ### <a name="Others"></a>Using our traces with other tools
 
-You can use ```sc2daredevil.py``` to convert the traces to the
+You can use `sc2daredevil.py` to convert the traces to the
 [Daredevil](https://github.com/SideChannelMarvels/Daredevil) format.
 
 From the Daredevil format, 
-you can further convert to .trs to use them with [Jlsca](https://github.com/Riscure/Jlsca)
-(use the splitbin2trs script provided there).
+you can further convert to `.trs` to use them with [Jlsca](https://github.com/Riscure/Jlsca)
+(use the `splitbin2trs` script provided there).
 
-### <a name="Jlsca"></a>Example: Attacking from 10 m with a LRA from Jlsca
+### <a name="Jlsca"></a>Example: Attacking from 10 m with an LRA from Jlsca
 
-First, we need to apply a few changes to ```load.py``` and
-to ```sc2daredevil.py```:
+First, we need to apply a few changes to `load.py` and
+to `sc2daredevil.py`:
 
 1. Following the instructions in [Missing normalization of the traces](#Missing normalization of the traces), add the
-   normalization of traces to ```load.py``` (i.e., divide each trace by its
+   normalization of traces to `load.py` (i.e., divide each trace by its
    average)
 
-2. In the ```sc2daredevil.py``` script, reprace the call to ```traces = load_traces('%s/avg_%s' % (trace_directory, trace_name), number)```
-   with ```traces = load_traces('%s/avg_%s' % (trace_directory, trace_name), number, 849, 950)```. This is simply to focus the attack exactly on the first round.
+2. In the `sc2daredevil.py` script, replace the line `traces = load_traces('%s/avg_%s' % (trace_directory, trace_name), number)`
+   with `traces = load_traces('%s/avg_%s' % (trace_directory, trace_name), number, 849, 950)`. This is simply to focus the attack exactly on the first round.
 
-We can now convert 5000 (each obtained by averaging 500 encryptions) traces to Daredevil with the following command:
+We can now convert 5000 traces (each obtained by averaging 500 encryptions) to Daredevil with the following command:
 
 ```
 python2.7 src/screamingchannels/sc2daredevil.py /traces/tinyaes_anechoic_10m_080618_template "" 5000 
 ```
 
 
-After installing julia and importing all the required modules, we can now call
-the splitbin2trs function provided by Jlsca in the trs-convert.jl script
-(plaintext and tracefile are generated by the sc2daredevil.py script in the
+After installing Julia and importing all the required modules, we can now call
+the `splitbin2trs` function provided by Jlsca in the `trs-convert.jl` script
+(plaintext and tracefile are generated by the `sc2daredevil.py` script in the
 current folder):
 
 ```
@@ -639,7 +629,7 @@ name of the crypto algorithm and the known key:
 mv output_UInt32_5000t_bitsasbytes.trs aes128_sb_ciph_d5c5cdfee0f187621f59e7509c0145c7.trs
 ```
 
-Finally, we can run one of Jlsca attacks, for example, the liner
+Finally, we can run one of Jlsca attacks, for example, the linear
 regression attack:
 
 ```
@@ -658,11 +648,11 @@ knownkey match: true
 
 ### <a name="Normalization"></a>Missing normalization of the traces
 
-For now we do not normalize the traces in anyway during collection. This is one
+For now we do not normalize the traces in any way during collection. This is one
 of the reasons why templates created in one setup cannot be easily reused in
 different setups.
 
-You may want to add a transparent normalization step in the ```load.py```
+You may want to add a transparent normalization step in the `load.py`
 script, as follows:
 
 ```
@@ -711,7 +701,7 @@ def load_traces(filename,number,wstart=0,wend=0):
 
 The trace format is not very convenient as it generates a large number of files (one per trace). 
 
-However, you could easily modify the ```reproduce.py``` and ```load.py```
+However, you could easily modify the `reproduce.py` and `load.py`
 scripts to save all the traces in a single .npy file.
 
 Moreover, you can easily convert our format to use our traces with other tools,
@@ -719,11 +709,11 @@ as explained in  [Using our traces with other tools](#Using our traces with othe
 
 ## <a name="Guideline"></a>Contribution Guideline
 
-If you think somethins is wrong or missing, or if you have ideas and questions, don't hesitate
+If you think something is wrong or missing, or if you have ideas or questions, don't hesitate
 to open issues on this repository.
 
-If you wrote a fix or improvement and would like to incorporate it, just fill a
-merge request. We simply ask you to write a explanation of the problem and of
+If you wrote a fix or improvement and would like to incorporate it, just file a
+merge request. We simply ask you to write an explanation of the problem and of
 your solution, as well as to test your code so that it does not break the other
 attacks. Consider adding switches if your change is very specific to a certain
 case.
