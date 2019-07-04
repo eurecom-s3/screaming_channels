@@ -157,9 +157,12 @@ export an environment variable with the path to the SDK.
 
 ```
 cd $SCREAMING_CHANNELS_PATH/screaming_channels/firmware
-wget https://www.nordicsemi.com/eng/nordic/download_resource/59011/68/92912988/116085
-unzip 116085
-rm 116085
+#wget https://www.nordicsemi.com/eng/nordic/download_resource/59011/68/92912988/116085
+#unzip 116085
+#rm 116085
+wget https://developer.nordicsemi.com/nRF5_SDK/nRF5_SDK_v14.x.x/nRF5_SDK_14.2.0_17b948a.zip
+unzip nRF5_SDK_14.2.0_17b948a.zip
+rm nRF5_SDK_14.2.0_17b948a.zip
 cp boards.h nRF5_SDK_14.2.0_17b948a/components/boards/
 cp Makefile.posix nRF5_SDK_14.2.0_17b948a/components/toolchain/gcc
 cp rblnano2.h nRF5_SDK_14.2.0_17b948a/components/boards/
