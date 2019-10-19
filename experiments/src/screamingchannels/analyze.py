@@ -103,8 +103,13 @@ def extract(capture_file, config, average_file_name=None, plot=False):
     # cut usless transient
     data = data[int(config.drop_start * config.sampling_rate):]
 
-    assert len(data) != 0, "ERROR, empty data after drop_start"
-    
+    # assert len(data) != 0, "ERROR, empty data after drop_start"
+
+    # Quick and dirty fix in case of empty data.
+    if len(data) == 0:
+        print "WARNING, empty data after drop start, returning zero trace"
+        return np.zeros(len(template))
+
     # polar discriminator
     # fdemod = data[1:] * np.conj(data[:-1])
     # fdemod = np.angle(fdemod)
@@ -154,6 +159,20 @@ def extract(capture_file, config, average_file_name=None, plot=False):
     # It should be enough to discard high values and keep everything on the low
     # side because interference always increases the energy (assuming that our
     # alignment is correct).
+
+    # Quick and dirty fix for the USRP B210 "recv packet demuxer unexpected sid"
+    # error. The data returned are empty, so no useful trace can be extracted.
+    # The fix consists in returning a zero trace in this case.
+    # NOTE: this fixes the way the error is handled, to avoid a crash of the
+    # collection, but it does not solve the error at its root, and the error
+    # message will still appear.
+    # TODO: investigate why this error
+    # appears, and why only with the B210, but never with the N210 and never
+    # with the HackRF.
+    if traces == []:
+       print "WARNING: Empty data, returning a zero trace"
+       return np.zeros(len(template)) 
+    
     num_reject = int(0.05 * len(traces))
     points = np.asarray(traces).T
     points.sort()

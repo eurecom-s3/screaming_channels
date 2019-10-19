@@ -1,0 +1,23 @@
+{
+    "firmware": {
+        "mode": "tinyaes",
+        "fixed_key": true,
+        "modulate": false
+    },
+    "collection": {
+        "target_freq": 2.528e9,
+        "sampling_rate": 5e6,
+        "num_points": 1,
+        "num_traces_per_point": 100,
+        "bandpass_lower": 1.85e6,
+        "bandpass_upper": 1.95e6,
+        "lowpass_freq": 5e3,
+        "drop_start": 40e-3,
+        "trigger_rising": true,
+        "trigger_offset": 100e-6,
+        "signal_length": 300e-6,
+        "template_name": "templates/temp_17cm_cw.npy",
+        "min_correlation": 0.00
+    }
+}
+

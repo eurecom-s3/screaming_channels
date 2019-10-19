@@ -202,7 +202,7 @@ def _send_parameter(ser, command, param):
     The function assumes that we've already entered tiny_aes mode.
     """
     command_line = '%s%s\r\n' % (command, _encode_for_device(param))
-    l.debug('Sending command:  %s' % command_line)
+    l.debug('Sending command:  %s\n' % command_line)
     if not COMMUNICATE_SLOW:
         ser.write(command_line)
     else:
@@ -210,7 +210,17 @@ def _send_parameter(ser, command, param):
             ser.write(p+' ')
             time.sleep(.05)
 
-    check = ''.join(chr(int(word)) for word in ser.readline().split(' '))
+    # check = ''.join(chr(int(word)) for word in ser.readline().split(' '))
+    # Quick and dirty fix
+    # Error: on the pca10040 the UART sometimes hangs for unknown reasons
+    # Fix: wait for a timeout and then just skip to the next trace to collect
+    l.debug('Waiting check\n')
+    x = ser.readline()
+    if len(x) == 0:
+        l.debug("WARNING: nothing received on timeout, skipping this trace")
+        return 
+    check = ''.join(chr(int(word)) for word in x.split(' '))
+    
     # -- create check like this instead for ESP32:
     #response = ser.readline()
     #response = [ a for a in response.split(' ') if a.isdigit() ]
@@ -220,7 +230,7 @@ def _send_parameter(ser, command, param):
                                  _encode_for_device(check))
         ser.write(b'q')
         sys.exit(1)
-
+    l.debug('Check done\n')
 
 def _send_key(ser, key):
     _send_parameter(ser, 'k', key)
@@ -357,6 +367,8 @@ def collect(config, target_path, name, average_out, plot):
 
                 gnuradio.start()
                 time.sleep(0.03)
+                if RADIO == Radio.USRP_mini:
+                    time.sleep(0.08)
 
                 if firmware_mode.repetition_command:
                     # The test mode supports repeated actions.
@@ -367,6 +379,8 @@ def collect(config, target_path, name, average_out, plot):
                     for _iteration in range(num_traces_per_point):
                         time.sleep(firmware_config.slow_mode_sleep_time)
                         ser.write(firmware_mode.action_command) # single action
+ 
+                time.sleep(0.09)
 
                 gnuradio.stop()
                 gnuradio.wait()
@@ -463,7 +477,7 @@ def create_waterfall(output_file):
 
 def _open_serial_port():
     l.debug("Opening serial port")
-    return serial.Serial(DEVICE, BAUD)
+    return serial.Serial(DEVICE, BAUD, timeout=5)
 
 
 class GNUradio(gr.top_block):
