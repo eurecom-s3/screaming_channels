@@ -382,7 +382,8 @@ apt install libgmp-dev
 
 Clone the repository.
 ```
-git clone https://github.com/eurecom-s3/python-hel
+<!--git clone https://github.com/eurecom-s3/python-hel-->
+git clone https://github.com/giocamurati/python_hel.git
 cd python-hel
 ```
 
