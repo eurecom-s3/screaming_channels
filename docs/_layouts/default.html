@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="{{ site.lang | default: "en-US" }}">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="stylesheet" href="{{ "/assets/css/style.css?v=" | append: site.github.build_revision | relative_url }}">
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1><a href="{{ "/" | absolute_url }}">{{ site.title | default: site.github.repository_name }}</a></h1>
+
+        {% if site.logo %}
+          <img src="{{site.logo | relative_url}}" alt="Logo" />
+        {% endif %}
+
+        <p>{{ site.description | default: site.github.project_tagline }}</p>
+
+        {% if site.github.is_user_page %}
+        <p class="view"><a href="{{ site.github.owner_url }}">View My GitHub Profile</a></p>
+        {% endif %}
+
+        {% if site.show_downloads %}
+        <ul class="downloads">
+          {% if site.paper_link %}
+          <li><a href="{{ site.paper_link }}">Download <strong>CCS18</strong></a></li>
+          {% else %}
+          <li style="background-color: #ffffff;pointer-events: none;"><a style="color: #dddddd;">Download <strong style="color: #bbbbbb;">PDF File</strong></a></li>
+          {% endif %}
+          {% if site.paper_link_2 %}
+          <li><a href="{{ site.paper_link_2 }}">Download <strong>CHES20</strong></a></li>
+          {% else %}
+          <li style="background-color: #ffffff;pointer-events: none;"><a style="color: #dddddd;">Download <strong style="color: #bbbbbb;">CHES20</strong></a></li>
+          {% endif %}
+          <li><a href="{{ site.github.repository_url }}">View On <strong>GitHub</strong></a></li>
+        </ul>
+        {% endif %}
+
+        <nav>
+          <ul class="index">
+            <li><a href="{{ site.base_url }}#Intro"><strong>Intro</strong></a></li>
+            <li><a href="{{ site.base_url }}#Authors"><strong>Authors</strong></a></li>
+            <li><a href="{{ site.base_url }}#Datasets"><strong>Datasets</strong></a></li>
+              <!--<ul class="index">-->
+                <!--<li><a href="{{ site.base_url }}#A"><strong>A</strong></a></li>-->
+                <!--<li><a href="{{ site.base_url }}#B"><strong>B</strong></a></li>-->
+              <!--</ul>-->
+            <li><a href="{{ site.base_url }}#Hardware"><strong>Hardware</strong></a></li>
+            <li><a href="{{ site.base_url }}#Reproduce"><strong>Reproduce</strong></a></li>
+              <!--<ul class="index">-->
+                <!--<li><a href="{{ site.base_url }}#Install"><strong>Install</strong></a></li>-->
+                <!--<li><a href="{{ site.base_url }}#Firmware"><strong>Firmware</strong></a></li>-->
+                <!--<li><a href="{{ site.base_url }}#SimpleExperiment"><strong>Simple Experiment</strong></a></li>-->
+                <!--<li><a href="{{ site.base_url }}#TraceCollection"><strong>Trace Collection</strong></a></li>-->
+                <!--<li><a href="{{ site.base_url }}#Attacks"><strong>Attacks</strong></a></li>-->
+                <!--<li><a href="{{ site.base_url }}#CCS18Attacks"><strong>CCS18 Attacks</strong></a></li>-->
+                <!--<li><a href="{{ site.base_url }}#CHES20Analysis"><strong>CHES20 Analysis</strong></a></li>-->
+                <!--<li><a href="{{ site.base_url }}#CHES20Attacks"><strong>CHES20 Attacks</strong></a></li>-->
+                <!--<li><a href="{{ site.base_url }}#CHES20Eddystone"><strong>CHES20 Google Eddystone Attack</strong></a></li>-->
+              <!--</ul>-->
+            <li><a href="{{ site.base_url }}#FAQ"><strong>FAQ</strong></a></li>
+            <li><a href="{{ site.base_url }}#Acknowledgments"><strong>Acknowledgments</strong></a></li>
+            <li><a href="{{ site.base_url }}#License"><strong>License</strong></a></li>
+          </ul>
+        </nav>
+
+      </header>
+      <section>
+
+      {{ content }}
+
+      </section>
+      <footer>
+        {% if site.owner_website %}
+        <p>This project is maintained by <a href="{{ site.owner_website }}">{{ site.github.owner_name }}</a></p>
+        {% else if site.github.is_project_page %}
+        <p>This project is maintained by <a href="{{ site.github.owner_url }}">{{ site.github.owner_name }}</a></p>
+        {% endif %}
+        <p>
+          <small>
+            Hosted on GitHub Pages &mdash;
+            Theme by <a href="https://github.com/orderedlist">orderedlist</a>
+            modified to add template project release structure by <a href="https://giocamurati.github.io">giocamurati</a>
+            inspired by <a href="https://linxiagong.github.io">linxiagong</a><br>
+            License <a href="https://creativecommons.org/licenses/by-sa/3.0/">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>
+          </small>
+        </p>
+      </footer>
+    </div>
+    <script src="{{ "/assets/js/scale.fix.js" | relative_url }}"></script>
+  </body>
+</html>

@@ -1,0 +1,16 @@
+title: Screaming Channels
+logo: #/assets/figures/logo.jpg
+description: '<strong>Novel side-channel vector in mixed-signal
+              chips with radio transceivers</strong>
+              <br>
+              This page describes how to reproduce/replicate
+              the results of the academic papers'
+show_downloads: true
+google_analytics:
+theme: jekyll-theme-minimal
+paper_link: http://s3.eurecom.fr/docs/ccs18_camurati.pdf
+paper_link_2: https://tches.iacr.org/index.php/TCHES/article/view/8594/8161
+data_link: 
+institutions: EURECOM
+authors: Giovanni Camurati
+owner_website: https://giocamurati.github.io/
