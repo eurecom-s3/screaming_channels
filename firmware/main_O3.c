@@ -60,7 +60,6 @@
 #include "app_error.h"
 #include "nordic_common.h"
 #include "aes.h"
-#include "nrf_ecb.h"
 
 // masked aes implementations from https://github.com/coron/htable
 #include "aes_masked/aes_unmasked.h"
@@ -494,14 +493,6 @@ static void help(void)
     printf("   o: Print encrypted ciphertext\r\n");
     printf("   q: Quit hwcrypto mode\r\n");
     nrf_delay_ms(10);
-    printf("n: Enter hwcrypto ECB mode\r\n");
-    printf("   p: Enter plaintext\r\n");
-    printf("   k: Enter key\r\n");
-    printf("   e: Encrypt\r\n");
-    printf("   n: Set number of repetitions\r\n");
-    printf("   r: Run repeated encryption\r\n");
-    printf("   q: Quit hwcrypto ECB mode\r\n");
-    nrf_delay_ms(10);
     printf("w: Enter aes_masked mode\r\n");
     printf("   0: Set mask mode to UNMASKED\r\n");
     printf("   1: Set mask mode to RIVAIN-PROUFF\r\n");
@@ -855,7 +846,7 @@ void tiny_aes_128_mode(){
                 break;
             case 'r':           /* repeated encryption */
                 for (uint32_t i = 0; i < num_repetitions; ++i) {
-                    for(uint32_t j = 0; j < 0xff; j++);
+                    for(volatile uint32_t j = 0; j <0xff; j++);
                     AES128_ECB_encrypt(in, key, out);
                 }
                 printf("Done\r\n");
@@ -872,69 +863,6 @@ void tiny_aes_128_mode(){
     }
     printf("Exiting tiny_aes_128 mode\r\n");
 }
-
-/*
- * @brief Function to handle hw crypto ecb attacks
- */
-void hwcrypto_ecb_mode(){
-    printf("Entering hwcrypto ECB mode\r\n");
-    uint8_t control;
-    bool exit = false;
-    uint8_t in[16];
-    uint8_t out[16];
-    uint8_t key[16];
-    uint32_t num_repetitions = 1;
-    bool ret;
-    nrf_ecb_init();
-    while(!exit){
-        scanf("%c",&control);
-        switch(control){
-            case 'p':
-                read_128(in);
-                write_128(in); // dbg
-                break;
-            case 'k':
-                read_128(key);
-                write_128(key); // dbg
-                /*nrf_ecb_set_key(key);*/
-                break;
-            case 'e':
-                preamble();
-                ret = nrf_ecb_crypt(out, in);
-                if(!ret)
-                    printf("Error in ECB encryption!\r\n");
-                break;
-            case 'n':           /* set number of repetitions */
-                scanf("%lu", &num_repetitions);
-                printf("Setting number of repetitions to %ld\r\n", num_repetitions);
-                break;
-            case 'r':           /* repeated encryption */
-                for (uint32_t i = 0; i < num_repetitions; ++i) {
-                    int j, k;
-                    for(j = 0; j < 128; j++)
-                        for(k = 0; k < 7; k++);
-                    preamble();
-                    preamble();
-                    preamble();
-                    nrf_ecb_set_key(key);
-                    ret = nrf_ecb_crypt(out, in);
-                    /*for(j = 0; j < 64; j++)*/
-                        /*for(k = 0; k < 9; k++);*/
-                    if(!ret)
-                        printf("Error in ECB encryption!\r\n");
-                }
-                printf("Done\r\n");
-                break;
-            case 'q':
-                exit = true;
-                break;
-            default:
-                break;
-        }
-    }
-    printf("Exiting hwcrypto ECB mode\r\n");
-}
-
 
 /*
  * @brief Function to handle hw crypto attacks
@@ -961,22 +889,8 @@ void hwcrypto_mode(){
             case 'i':
                 read_128(init);
                 write_128(init); // dbg
-
-                /* See Bluetooth Core Specification V5.1
-                 * 
-                 * We attack KEY1 = AES(KEY, A1)
-                 * A1[0] = 1
-                 * A1[1:13] = Nonce[0:12] (MSB[Nonce[12]] = direction)
-                 * A1[14] = MSB[counter+1]
-                 * A2[15] = LSB[counter+1]
-                 * 
-                 * Here we have:
-                 * counter = init[11:15]
-                 * direction = MSB[init[15]]
-                 * iv = init[3:10]*/ 
                 for(int i = 0; i < 5; i++)
                     ccm_config.counter[i] = init[i + 11];
-                ccm_config.direction = ((init[15] & 0x80) >> 7); 
                 for(int i = 0; i < 8; i++)
                     ccm_config.iv[i] = init[i + 3];
                 break;
@@ -990,16 +904,10 @@ void hwcrypto_mode(){
                 break;
             case 'r':           /* repeated encryption */
                 for (uint32_t i = 0; i < num_repetitions; ++i) {
-                    int j, k;
-                    for(j = 0; j < 128; j++)
-                        for(k = 0; k < 6; k++);
                     preamble();
                     ccm_run_crypto_sync();
                 }
                 printf("Done\r\n");
-                break;
-            case 'v':
-                write_128(ccm_data_out.payload);
                 break;
             case 'q':
                 exit = true;
@@ -1359,10 +1267,6 @@ int main(void)
 
             case 'u':
                 hwcrypto_mode();
-                break;
-
-            case 'U':
-                hwcrypto_ecb_mode();
                 break;
 
             case 'v':

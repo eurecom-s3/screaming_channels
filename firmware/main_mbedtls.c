@@ -59,14 +59,7 @@
 #include "app_uart.h"
 #include "app_error.h"
 #include "nordic_common.h"
-#include "aes.h"
-#include "nrf_ecb.h"
-
-// masked aes implementations from https://github.com/coron/htable
-#include "aes_masked/aes_unmasked.h"
-#include "aes_masked/aes_share.h"
-#include "aes_masked/aes_htable.h"
-#include "aes_masked/aes_rp.h"
+#include "mbedtls/aes.h"
 
 /*
  * Poor man's hexdump
@@ -94,34 +87,21 @@ static int channel_start_     = 0;
 static int channel_end_       = 80;
 static int delayms_           = 10;
 //static uint8_t rcounter_      = 0;
+static bool sweep = false;
+static bool ccm = false;
 
 typedef enum
 {
-    RADIO_TEST_NOP,             /**< No test running.                                */
-    RADIO_TEST_TXCC,            /**< TX constant carrier.                            */
-    RADIO_TEST_TXCC_CCM,        /**< TX constant carrier with encryption.            */
-    RADIO_TEST_TXCC_CCM_DELAY,  /**< TX constant carrier with encryption and delays. */
-    RADIO_TEST_TXMC,            /**< TX modulated carrier.                           */
-    RADIO_TEST_TXMC_CCM,        /**< TX modulated carrier with encryption.           */
-    RADIO_TEST_TXSWEEP,         /**< TX sweep.                                       */
-    RADIO_TEST_RXC,             /**< RX constant carrier.                            */
-    RADIO_TEST_RXSWEEP,         /**< RX sweep.                                       */
-    RADIO_TEST_NOISYOP,         /**< Some noisy op.                                  */
+    RADIO_TEST_NOP,             /**< No test running.                      */
+    RADIO_TEST_TXCC,            /**< TX constant carrier.                  */
+    RADIO_TEST_TXCC_CCM,        /**< TX constant carrier with encryption.  */
+    RADIO_TEST_TXMC,            /**< TX modulated carrier.                 */
+    RADIO_TEST_TXMC_CCM,        /**< TX modulated carrier with encryption. */
+    RADIO_TEST_TXSWEEP,         /**< TX sweep.                             */
+    RADIO_TEST_RXC,             /**< RX constant carrier.                  */
+    RADIO_TEST_RXSWEEP,         /**< RX sweep.                             */
+    RADIO_TEST_NOISYOP,         /**< Some noisy op.                        */
 } radio_tests_t;
-
-typedef enum
-{
-    AES_UNMASKED,
-    AES_RIVAIN_PROUFF,
-    AES_RIVAIN_PROUFF_SHARED,
-    AES_RAND_TABLE,
-    AES_RAND_TABLE_INC,
-    AES_RAND_TABLE_WORD,
-    AES_RAND_TABLE_WORD_INC,
-    AES_RAND_TABLE_SHARED,
-    AES_RAND_TABLE_SHARED_WORD,
-    AES_RAND_TABLE_SHARED_WORD_INC,
-} aes_mask_mode_t;
 
 
 /* Code for using the CCM block */
@@ -193,7 +173,6 @@ static void ccm_enable(uint8_t data_rate)
 static void ccm_disable(void)
 {
     NRF_CCM->ENABLE = (CCM_ENABLE_ENABLE_Disabled << CCM_ENABLE_ENABLE_Pos);
-    NRF_CCM->INTENCLR = (CCM_INTENCLR_ENDCRYPT_Clear << CCM_INTENCLR_ENDCRYPT_Pos);
     NRF_PPI->CHEN  &= ~PPI_CHEN_CH24_Msk;  /* hard-coded interconnect between READY and KSGEN */
     NRF_PPI->CHENCLR = (1 << 17);          /* custom connection between ENDCRYPT and KSGEN */
 }
@@ -280,17 +259,11 @@ static void ccm_test_crypto(void)
     ccm_disable();
 }
 
-typedef enum {
-    CCM_RADIO_TX_TRANSMIT_RESULT, /* Transmit the result of the crypto operation. */
-    CCM_RADIO_TX_CW,              /* Transmit a continuous wave while running crypto in a loop. */
-    CCM_RADIO_TX_CW_WITH_DELAY,   /* Like CCM_RADIO_TX_CW, but delay after each crypto run. */
-} ccm_radio_tx_mode_t;
-
 /** @brief Start transmission with on-the-fly encryption.
  *
  * We follow the approach described in Sections 29.4 and 29.5 of the data sheet.
  */
-static void ccm_radio_tx(uint8_t tx_power, uint8_t radio_mode, int channel, ccm_radio_tx_mode_t scenario)
+static void ccm_radio_tx(uint8_t tx_power, uint8_t radio_mode, int channel, bool transmit_result)
 {
     /*
      * Data setup
@@ -316,7 +289,7 @@ static void ccm_radio_tx(uint8_t tx_power, uint8_t radio_mode, int channel, ccm_
     }
     NRF_RADIO->EVENTS_DISABLED = 0;
 
-    if (scenario == CCM_RADIO_TX_TRANSMIT_RESULT)
+    if (transmit_result)
         NRF_RADIO->SHORTS =
             RADIO_SHORTS_READY_START_Msk |   /* Start transmission after ramp-up. */
             RADIO_SHORTS_END_DISABLE_Msk |   /* Disable radio after transmission. */
@@ -367,23 +340,14 @@ static void ccm_radio_tx(uint8_t tx_power, uint8_t radio_mode, int channel, ccm_
 
     NRF_RADIO->PACKETPTR = (uint32_t)&ccm_data_out;
 
-    switch (scenario)
-    {
-    case CCM_RADIO_TX_TRANSMIT_RESULT:
+    if (transmit_result) {
         NRF_PPI->CHEN = PPI_CHEN_CH24_Msk;  /* hard-coded interconnect between READY and KSGEN */
-        break;
-
-    case CCM_RADIO_TX_CW:
+    }
+    else {
         /* Restart CCM whenever it finishes. */
         NRF_PPI->CH[17].EEP = (uint32_t)&NRF_CCM->EVENTS_ENDCRYPT;
         NRF_PPI->CH[17].TEP = (uint32_t)&NRF_CCM->TASKS_KSGEN;
         NRF_PPI->CHENSET = (1 << 17);
-        break;
-
-    case CCM_RADIO_TX_CW_WITH_DELAY:
-        /* Trigger an interrupt when done; the handler will sleep and restart. */
-        NRF_CCM->INTENSET = (CCM_INTENSET_ENDCRYPT_Set << CCM_INTENSET_ENDCRYPT_Pos);
-        break;
     }
 
     /*
@@ -394,21 +358,8 @@ static void ccm_radio_tx(uint8_t tx_power, uint8_t radio_mode, int channel, ccm_
 
     /* If we don't transmit the result, CCM is not triggered by the radio, so we
      * have to start it manually. */
-    if (scenario != CCM_RADIO_TX_TRANSMIT_RESULT)
+    if (!transmit_result)
         NRF_CCM->TASKS_KSGEN = 1;
-}
-
-void CCM_AAR_IRQHandler(void)
-{
-    NRF_CCM->EVENTS_ENDCRYPT = 0;
-
-    /* Sleeping in an interrupt handler is not the most elegant thing to do, but
-     * since our sleeps are relatively short the solution works well enough for
-     * now. If ever we run into problems we can use a timer instead. */
-    nrf_delay_us(10);
-
-    /* Start a new round of crypto. */
-    NRF_CCM->TASKS_KSGEN = 1;
 }
 
 
@@ -460,7 +411,6 @@ static void help(void)
     printf("f: Toggle CCM power\r\n");
     printf("g: Change CCM counter\r\n");
     printf("i: Start (unmodulated) TX carrier with active CCM\r\n");
-    printf("j: Start (unmodulated) TX carrier with active CCM and delays\r\n");
     printf("l: Test the crypto hardware\r\n");
     nrf_delay_ms(10);
     printf("m: Enter data rate\r\n");
@@ -474,56 +424,16 @@ static void help(void)
     printf("y: Start noisy operation\r\n");
     printf("z: End noisy operation\r\n");
     nrf_delay_ms(10);
-    printf("n: Enter tiny_aes_128 mode\r\n");
+    printf("n: Enter mbedtls_128 mode\r\n");
     printf("   p: Enter plaintext\r\n");
     printf("   k: Enter key\r\n");
     printf("   e: Encrypt\r\n");
-    printf("   n: Set number of repetitions\r\n");
-    printf("   r: Run repeated encryption\r\n");
-    printf("   q: Quit tiny_aes_128 mode\r\n");
+    printf("   q: Quit mbedtls_128 mode\r\n");
     nrf_delay_ms(10);
     printf("v: Enter simplified power analysis mode\r\n");
     printf("   m: Enter switching mask\r\n");
     printf("   s: Switch\r\n");
     printf("   q: Quit power analysis mode\r\n");
-    nrf_delay_ms(10);
-    printf("u: Enter hwcrypto mode\r\n");
-    printf("   p: Enter plaintext\r\n");
-    printf("   k: Enter key\r\n");
-    printf("   e: Encrypt\r\n");
-    printf("   o: Print encrypted ciphertext\r\n");
-    printf("   q: Quit hwcrypto mode\r\n");
-    nrf_delay_ms(10);
-    printf("n: Enter hwcrypto ECB mode\r\n");
-    printf("   p: Enter plaintext\r\n");
-    printf("   k: Enter key\r\n");
-    printf("   e: Encrypt\r\n");
-    printf("   n: Set number of repetitions\r\n");
-    printf("   r: Run repeated encryption\r\n");
-    printf("   q: Quit hwcrypto ECB mode\r\n");
-    nrf_delay_ms(10);
-    printf("w: Enter aes_masked mode\r\n");
-    printf("   0: Set mask mode to UNMASKED\r\n");
-    printf("   1: Set mask mode to RIVAIN-PROUFF\r\n");
-    printf("   2: Set mask mode to RIVAIN-PROUFF-SHARED\r\n");
-    printf("   3: Set mask mode to RAND-TABLE\r\n");
-    nrf_delay_ms(10);
-    printf("   4: Set mask mode to RAND-TABLE-INC\r\n");
-    printf("   5: Set mask mode to RAND-TABLE-WORD\r\n");
-    printf("   6: Set mask mode to RAND-TABLE-WORD-INC\r\n");
-    nrf_delay_ms(10);
-    printf("   7: Set mask mode to RAND-TABLE-SHARED\r\n");
-    printf("   8: Set mask mode to RAND-TABLE-SHARED-WORD\r\n");
-    printf("   9: Set mask mode to RAND-TABLE-SHARED-WORD-INC\r\n");
-    nrf_delay_ms(10);
-    printf("   p: Enter plaintext\r\n");
-    printf("   k: Enter key\r\n");
-    printf("   e: Encrypt\r\n");
-    printf("   o: Print encrypted ciphertext\r\n");
-    printf("   n: Set number of repetitions\r\n");
-    nrf_delay_ms(10);
-    printf("   r: Run repeated encryption\r\n");
-    printf("   q: Quit aes_masked mode\r\n");
 }
 
 
@@ -758,13 +668,13 @@ void read_128(uint8_t* in){
     int tmp;
     for(int i=0;i<16;i++){
         scanf("%d",&tmp);
-        in[i] = (uint8_t)tmp;
+	in[i] = (uint8_t)tmp;
     }
     /*scanf("%hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd",*/
            /*&in[ 0],&in[ 1],&in[ 2],&in[ 3],*/
-           /*&in[ 4],&in[ 5],&in[ 6],&in[ 7],*/
-           /*&in[ 8],&in[ 9],&in[10],&in[11],*/
-           /*&in[12],&in[13],&in[14],&in[15]);*/
+	   /*&in[ 4],&in[ 5],&in[ 6],&in[ 7],*/
+	   /*&in[ 8],&in[ 9],&in[10],&in[11],*/
+	   /*&in[12],&in[13],&in[14],&in[15]);*/
 }
 
 /*
@@ -773,67 +683,29 @@ void read_128(uint8_t* in){
 void write_128(uint8_t* out){
     printf("%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d\r\n",
            out[ 0],out[ 1],out[ 2],out[ 3],
-           out[ 4],out[ 5],out[ 6],out[ 7],
-           out[ 8],out[ 9],out[10],out[11],
-           out[12],out[13],out[14],out[15]);
+	   out[ 4],out[ 5],out[ 6],out[ 7],
+	   out[ 8],out[ 9],out[10],out[11],
+	   out[12],out[13],out[14],out[15]);
 }
 
 /*
- * brief Function that creates a preable for easy alignment
+ * @brief Function to handle mbedtls_128 attacks
  */
-void preamble(){
+void mbedtls_128_mode(){
+    printf("Entering mbedtls_aes_128 mode\r\n");
+    mbedtls_aes_context ctx;
+    uint8_t control;
+    bool exit = false;
+
+    uint8_t key[16] = {0};
+    uint8_t in[16] = {0};
+    uint8_t out[16] = {0};
+    
     typedef uint8_t state_t[4][4];
     state_t state = {0};
     uint8_t i,j;
-    for(i=0;i<4;++i)
-    {
-      for(j = 0; j < 4; ++j)
-      {
-        state[i][j] ^= 0xff;
-      }
-    }
-    for(i=0;i<4;++i)
-    {
-      for(j = 0; j < 4; ++j)
-      {
-        state[i][j] ^= 0xff;
-      }
-    }
-    for(i=0;i<4;++i)
-    {
-      for(j = 0; j < 4; ++j)
-      {
-        state[i][j] ^= 0xff;
-      }
-    }
-    for(i=0;i<4;++i)
-    {
-      for(j = 0; j < 4; ++j)
-      {
-        state[i][j] ^= 0xff;
-      }
-    }
-    for(i=0;i<4;++i)
-    {
-      for(j = 0; j < 4; ++j)
-      {
-        state[i][j] ^= 0xff;
-      }
-    }
-}
 
-/*
- * @brief Function to handle tiny_aes_128 attacks
- */
-void tiny_aes_128_mode(){
-    printf("Entering tiny_aes_128 mode\r\n");
-    uint8_t control;
-    bool exit = false;
-    uint8_t key[16] = {0};
-    uint8_t in[16] = {0};
-    uint8_t out[16] = {0};
-    uint32_t num_repetitions = 1;
-
+    mbedtls_aes_init(&ctx); 
 
     while(!exit){
         scanf("%c",&control);
@@ -845,284 +717,42 @@ void tiny_aes_128_mode(){
             case 'k':
                 read_128(key);
                 write_128(key); // dbg
+                mbedtls_aes_setkey_enc(&ctx, key, 128);
                 break;
             case 'e':
-                AES128_ECB_encrypt(in,key,out);
-                break;
-            case 'n':           /* set number of repetitions */
-                scanf("%lu", &num_repetitions);
-                printf("Setting number of repetitions to %ld\r\n", num_repetitions);
-                break;
-            case 'r':           /* repeated encryption */
-                for (uint32_t i = 0; i < num_repetitions; ++i) {
-                    for(uint32_t j = 0; j < 0xff; j++);
-                    AES128_ECB_encrypt(in, key, out);
+                for(i=0;i<4;++i)
+                {
+                  for(j = 0; j < 4; ++j)
+                  {
+                    state[i][j] ^= 0xff;
+                  }
                 }
-                printf("Done\r\n");
-                break;
-            case 'o':
-                write_128(out);
-                break;
-            case 'q':
-                exit = true;
-                break;
-            default:
-                break;
-        }
-    }
-    printf("Exiting tiny_aes_128 mode\r\n");
-}
-
-/*
- * @brief Function to handle hw crypto ecb attacks
- */
-void hwcrypto_ecb_mode(){
-    printf("Entering hwcrypto ECB mode\r\n");
-    uint8_t control;
-    bool exit = false;
-    uint8_t in[16];
-    uint8_t out[16];
-    uint8_t key[16];
-    uint32_t num_repetitions = 1;
-    bool ret;
-    nrf_ecb_init();
-    while(!exit){
-        scanf("%c",&control);
-        switch(control){
-            case 'p':
-                read_128(in);
-                write_128(in); // dbg
-                break;
-            case 'k':
-                read_128(key);
-                write_128(key); // dbg
-                /*nrf_ecb_set_key(key);*/
-                break;
-            case 'e':
-                preamble();
-                ret = nrf_ecb_crypt(out, in);
-                if(!ret)
-                    printf("Error in ECB encryption!\r\n");
-                break;
-            case 'n':           /* set number of repetitions */
-                scanf("%lu", &num_repetitions);
-                printf("Setting number of repetitions to %ld\r\n", num_repetitions);
-                break;
-            case 'r':           /* repeated encryption */
-                for (uint32_t i = 0; i < num_repetitions; ++i) {
-                    int j, k;
-                    for(j = 0; j < 128; j++)
-                        for(k = 0; k < 7; k++);
-                    preamble();
-                    preamble();
-                    preamble();
-                    nrf_ecb_set_key(key);
-                    ret = nrf_ecb_crypt(out, in);
-                    /*for(j = 0; j < 64; j++)*/
-                        /*for(k = 0; k < 9; k++);*/
-                    if(!ret)
-                        printf("Error in ECB encryption!\r\n");
+                for(i=0;i<4;++i)
+                {
+                  for(j = 0; j < 4; ++j)
+                  {
+                    state[i][j] ^= 0xff;
+                  }
                 }
-                printf("Done\r\n");
-                break;
-            case 'q':
-                exit = true;
-                break;
-            default:
-                break;
-        }
-    }
-    printf("Exiting hwcrypto ECB mode\r\n");
-}
-
-
-/*
- * @brief Function to handle hw crypto attacks
- */
-void hwcrypto_mode(){
-    printf("Entering hwcrypto mode\r\n");
-    uint8_t control;
-    bool exit = false;
-    ccm_enable(CCM_MODE_DATARATE_1Mbit);
-    ccm_data_in.length = 16;
-    uint8_t init[16];
-    uint32_t num_repetitions = 1;
-    while(!exit){
-        scanf("%c",&control);
-        switch(control){
-            case 'p':
-                read_128(ccm_data_in.payload);
-                write_128(ccm_data_in.payload); // dbg
-                break;
-            case 'k':
-                read_128(ccm_config.key);
-                write_128(ccm_config.key); // dbg
-                break;
-            case 'i':
-                read_128(init);
-                write_128(init); // dbg
-
-                /* See Bluetooth Core Specification V5.1
-                 * 
-                 * We attack KEY1 = AES(KEY, A1)
-                 * A1[0] = 1
-                 * A1[1:13] = Nonce[0:12] (MSB[Nonce[12]] = direction)
-                 * A1[14] = MSB[counter+1]
-                 * A2[15] = LSB[counter+1]
-                 * 
-                 * Here we have:
-                 * counter = init[11:15]
-                 * direction = MSB[init[15]]
-                 * iv = init[3:10]*/ 
-                for(int i = 0; i < 5; i++)
-                    ccm_config.counter[i] = init[i + 11];
-                ccm_config.direction = ((init[15] & 0x80) >> 7); 
-                for(int i = 0; i < 8; i++)
-                    ccm_config.iv[i] = init[i + 3];
-                break;
-            case 'e':
-                preamble();
-                ccm_run_crypto_sync();
-                break;
-            case 'n':           /* set number of repetitions */
-                scanf("%lu", &num_repetitions);
-                printf("Setting number of repetitions to %ld\r\n", num_repetitions);
-                break;
-            case 'r':           /* repeated encryption */
-                for (uint32_t i = 0; i < num_repetitions; ++i) {
-                    int j, k;
-                    for(j = 0; j < 128; j++)
-                        for(k = 0; k < 6; k++);
-                    preamble();
-                    ccm_run_crypto_sync();
+                for(i=0;i<4;++i)
+                {
+                  for(j = 0; j < 4; ++j)
+                  {
+                    state[i][j] ^= 0xff;
+                  }
                 }
-                printf("Done\r\n");
-                break;
-            case 'v':
-                write_128(ccm_data_out.payload);
+ 
+                mbedtls_aes_crypt_ecb(&ctx, MBEDTLS_AES_ENCRYPT, in, out);
                 break;
             case 'q':
-                exit = true;
+                    exit = true;
                 break;
             default:
                 break;
         }
     }
-    ccm_disable();
-    printf("Exiting hwcrypto mode\r\n");
+    printf("Exiting mbedtls_128 mode\r\n");
 }
-
-void do_aes_masked(aes_mask_mode_t mode, uint8_t *in, uint8_t *out, uint8_t *key, uint32_t num_repetition)
-{
-    int i;
-
-    switch(mode)
-    {
-        case AES_UNMASKED:
-            run_aes(in, out, key, num_repetition);
-            break;
-
-        case AES_RIVAIN_PROUFF:
-            for( i=0 ; i < num_repetition ; i++)
-                aes_rp(in, out, key);
-            break;
-
-        case AES_RIVAIN_PROUFF_SHARED:
-            run_aes_share(in,out,key,3,&subbyte_rp_share,num_repetition);
-            break;
-        case AES_RAND_TABLE:
-            run_aes_share(in,out,key,3,&subbyte_htable,num_repetition); 
-            break;
-
-        case AES_RAND_TABLE_INC:
-            run_aes_share(in,out,key,3,&subbyte_htable_inc,num_repetition); 
-            break;
-
-        case AES_RAND_TABLE_WORD:
-            run_aes_share(in,out,key,3,&subbyte_htable_word,num_repetition); 
-            break;
-
-        case AES_RAND_TABLE_WORD_INC:
-            run_aes_share(in,out,key,3,&subbyte_htable_word_inc,num_repetition); 
-            break;
-
-        case AES_RAND_TABLE_SHARED:
-            run_aes_common_share(in,out,key,3,&subbyte_cs_htable,num_repetition); 
-            break;
-
-        case AES_RAND_TABLE_SHARED_WORD:
-            run_aes_common_share(in,out,key,3,&subbyte_cs_htable_word,num_repetition); 
-            break;
-
-        case AES_RAND_TABLE_SHARED_WORD_INC:
-            run_aes_common_share(in,out,key,3,&subbyte_cs_htable_word_inc,num_repetition); 
-            break;
-
-        default:
-            printf("Not implemented yet \r\n");
-    }
-}
-
-/*  Function for the aes_masked mode */
-void aes_masked_mode(){
-    uint8_t control;
-    bool exit = false;
-    uint8_t key[16] = {0};
-    uint8_t in[16] = {0};
-    uint8_t out[16] = {0};
-    uint32_t num_repetitions = 1;
-    aes_mask_mode_t mask_mode = AES_UNMASKED;
-
-    printf("Entering aes_masked mode\r\n");
-    while(!exit){
-        scanf("%c",&control);
-        switch(control){
-            case '0':
-            case '1':
-            case '2':
-            case '3':
-            case '4':
-            case '5':
-            case '6':
-            case '7':
-            case '8':
-            case '9':
-                mask_mode = (aes_mask_mode_t) control - '0';
-                printf("Switched masking mode to mode no: %d\r\n", mask_mode);
-                break;
-            case 'p':
-                read_128(in);
-                write_128(in); // dbg
-                break;
-            case 'k':
-                read_128(key);
-                write_128(key); // dbg
-                break;
-            case 'e':
-                do_aes_masked(mask_mode, in, out, key, 1); 
-                break;
-            case 'n':           /* set number of repetitions */
-                scanf("%lu", &num_repetitions);
-                printf("Setting number of repetitions to %ld\r\n", num_repetitions);
-                break;
-            case 'r':           /* repeated encryption */
-                do_aes_masked(mask_mode, in, out, key, num_repetitions); 
-                printf("Done\r\n");
-                break;
-            case 'o':
-                write_128(out);
-                break;
-            case 'q':
-                exit = true;
-                break;
-            default:
-                break;
-        }
-    }
-    printf("Exiting aes_masked mode\r\n");
-}
-
-
 
 /*
  * @brief Function that models the swithcing activity of the AES state
@@ -1154,43 +784,22 @@ void power_analysis_mode(){
     uint8_t switching_mask[16] = {0};
     while(!exit){
         scanf("%c",&control);
-        switch(control){
-            case 'p':
+	switch(control){
+	    case 'm':
                 read_128(switching_mask);
-                write_128(switching_mask); // dbg
-                break;
-            case 's':
-                switch_state(switching_mask);
-                break;
-            case 'q':
+		write_128(switching_mask); // dbg
+		break;
+	    case 's':
+		switch_state(switching_mask);
+		break;
+	    case 'q':
                 exit = true;
-                break;
-            default:
-                break;
-        }
+		break;
+	    default:
+		break;
+	}
     }
     printf("Exiting power analysis mode\r\n");
-}
-
-typedef struct {
-    bool sweep;
-    bool ccm;
-} main_state_t;
-
-/** @brief Helper to switch off all activity.
- */
-void all_off(main_state_t* state)
-{
-    if (state->sweep)
-    {
-        radio_sweep_end();
-        state->sweep = false;
-    }
-    if (state->ccm)
-    {
-        ccm_disable();
-        state->ccm = false;
-    }
 }
 
 /** @brief Function for main application entry.
@@ -1200,7 +809,6 @@ int main(void)
     uint32_t err_code;
     radio_tests_t test     = RADIO_TEST_NOP;
     radio_tests_t cur_test = RADIO_TEST_NOP;
-    main_state_t state     = {false, false};
 
     init();
     const app_uart_comm_params_t comm_params =
@@ -1226,7 +834,6 @@ int main(void)
     printf("RF Test\r\n");
     NVIC_EnableIRQ(TIMER0_IRQn);
     NVIC_EnableIRQ(TIMER1_IRQn);
-    NVIC_EnableIRQ(CCM_AAR_IRQn);
     __enable_irq();
     while (true)
     {
@@ -1304,11 +911,6 @@ int main(void)
                 printf("TX modulated carrier with encryption\r\n");
                 break;
 
-            case 'j':
-                test = RADIO_TEST_TXCC_CCM_DELAY;
-                printf("TX modulated carrier with encryption and delays\r\n");
-                break;
-
             case 'l':
                 if (cur_test != RADIO_TEST_NOP || test != RADIO_TEST_NOP)
                     printf("Disable running test first!\r\n");
@@ -1320,13 +922,10 @@ int main(void)
                 get_datarate();
                 test = cur_test;
                 break;
-            case 'w':
-                aes_masked_mode();
-                break;
 
-            case 'n':
-                tiny_aes_128_mode();
-                break;
+	    case 'n':
+                mbedtls_128_mode();
+		break;
 
             case 'o':
                 test = RADIO_TEST_TXMC;
@@ -1357,17 +956,9 @@ int main(void)
                 printf("TX Sweep\r\n");
                 break;
 
-            case 'u':
-                hwcrypto_mode();
-                break;
-
-            case 'U':
-                hwcrypto_ecb_mode();
-                break;
-
-            case 'v':
-                power_analysis_mode();
-                break;
+	    case 'v':
+		power_analysis_mode();
+		break;
 
             case 'x':
                 test = RADIO_TEST_RXC;
@@ -1397,53 +988,89 @@ int main(void)
         switch (test)
         {
             case RADIO_TEST_TXCC:
-                all_off(&state);
+                if (sweep)
+                {
+                    radio_sweep_end();
+                    sweep = false;
+                }
+                if (ccm)
+                {
+                    ccm_disable();
+                    ccm = false;
+                }
                 radio_tx_carrier(txpower_, mode_, channel_start_);
                 cur_test = test;
                 test     = RADIO_TEST_NOP;
                 break;
 
             case RADIO_TEST_TXCC_CCM:
-                all_off(&state);
-                state.ccm = true;
-                ccm_radio_tx(txpower_, mode_, channel_start_, CCM_RADIO_TX_CW);
-                cur_test = test;
-                test     = RADIO_TEST_NOP;
-                break;
-
-            case RADIO_TEST_TXCC_CCM_DELAY:
-                all_off(&state);
-                state.ccm = true;
-                ccm_radio_tx(txpower_, mode_, channel_start_, CCM_RADIO_TX_CW_WITH_DELAY);
+                if (sweep)
+                {
+                    radio_sweep_end();
+                    sweep = false;
+                }
+                if (ccm)
+                {
+                    ccm_disable();
+                    ccm = false;
+                }
+                ccm = true;
+                ccm_radio_tx(txpower_, mode_, channel_start_, false);
                 cur_test = test;
                 test     = RADIO_TEST_NOP;
                 break;
 
             case RADIO_TEST_TXMC:
-                all_off(&state);
+                if (sweep)
+                {
+                    radio_sweep_end();
+                    sweep = false;
+                }
+                if (ccm)
+                {
+                    ccm_disable();
+                    ccm = false;
+                }
                 radio_modulated_tx_carrier(txpower_, mode_, channel_start_);
                 cur_test = test;
                 test     = RADIO_TEST_NOP;
                 break;
 
             case RADIO_TEST_TXMC_CCM:
-                all_off(&state);
-                state.ccm = true;
-                ccm_radio_tx(txpower_, mode_, channel_start_, CCM_RADIO_TX_TRANSMIT_RESULT);
+                if (sweep)
+                {
+                    radio_sweep_end();
+                    sweep = false;
+                }
+                if (ccm)
+                {
+                    ccm_disable();
+                    ccm = false;
+                }
+                ccm = true;
+                ccm_radio_tx(txpower_, mode_, channel_start_, true);
                 cur_test = test;
                 test     = RADIO_TEST_NOP;
                 break;
 
             case RADIO_TEST_TXSWEEP:
-                all_off(&state);
                 radio_tx_sweep_start(txpower_, mode_, channel_start_, channel_end_, delayms_);
-                state.sweep = true;
+                sweep    = true;
                 cur_test = test;
                 test     = RADIO_TEST_NOP;
                 break;
 
             case RADIO_TEST_RXC:
-                all_off(&state);
+                if (sweep)
+                {
+                    radio_sweep_end();
+                    sweep = false;
+                }
+                if (ccm)
+                {
+                    ccm_disable();
+                    ccm = false;
+                }
                 radio_rx_carrier(mode_, channel_start_);
                 cur_test = test;
                 test     = RADIO_TEST_NOP;
@@ -1451,7 +1078,7 @@ int main(void)
 
             case RADIO_TEST_RXSWEEP:
                 radio_rx_sweep_start(mode_, channel_start_, channel_end_, delayms_);
-                state.sweep = true;
+                sweep    = true;
                 cur_test = test;
                 test     = RADIO_TEST_NOP;
                 break;
@@ -1459,7 +1086,7 @@ int main(void)
             case RADIO_TEST_NOISYOP:
                 timer1_init();
                 start_noisy_op();
-                state.sweep    = false;
+                sweep    = false;
                 cur_test = test;
                 test     = RADIO_TEST_NOP;
                 break;

@@ -24,18 +24,11 @@ SRC_FILES += \
   $(SDK_ROOT)/components/libraries/uart/retarget.c \
   $(SDK_ROOT)/components/drivers_nrf/common/nrf_drv_common.c \
   $(SDK_ROOT)/components/drivers_nrf/uart/nrf_drv_uart.c \
-  $(PROJ_DIR)/main.c \
-  $(PROJ_DIR)/aes_masked/aes_unmasked.c \
-  $(PROJ_DIR)/aes_masked/aes_rp.c \
-  $(PROJ_DIR)/aes_masked/aes_share.c \
-  $(PROJ_DIR)/aes_masked/aes_htable.c \
-  $(PROJ_DIR)/aes_masked/share.c \
-  $(PROJ_DIR)/aes_masked/common.c \
+  $(PROJ_DIR)/main_mbedtls.c \
   $(PROJ_DIR)/radio_test.c \
   $(SDK_ROOT)/components/toolchain/gcc/gcc_startup_nrf52.S \
   $(SDK_ROOT)/components/toolchain/system_nrf52.c \
-  $(SDK_ROOT)/components/drivers_nrf/hal/nrf_ecb.c \
-  $(SDK_ROOT)/external/tiny-AES128/aes.c
+  $(SDK_ROOT)/external/mbedtls/library/aes.c
 
 # Include folders common to all targets
 INC_FOLDERS += \
@@ -63,8 +56,8 @@ INC_FOLDERS += \
   $(SDK_ROOT)/components/toolchain/gcc \
   $(SDK_ROOT)/components/toolchain \
   $(SDK_ROOT)/components/drivers_nrf/common \
-  $(SDK_ROOT)/components/drivers_nrf/hal \
-  $(SDK_ROOT)/external/tiny-AES128
+  $(SDK_ROOT)/external/mbedtls/include
+
 
 # Libraries common to all targets
 LIB_FILES += \
