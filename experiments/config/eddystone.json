@@ -1,0 +1,28 @@
+{
+    "firmware": {
+        "mode": "tinyaes",
+        "fixed_key": false,
+        "modulate": false,
+        "conventional": false
+    },
+    "collection": {
+        "channel": 0,
+        "target_freq": 2602e6,
+        "sampling_rate": 5e6,
+        "num_points":10,
+        "num_traces_per_point": 1,
+        "bandpass_lower": 1.05e6,
+        "bandpass_upper": 1.10e6,
+        "lowpass_freq": 50e3,
+        "drop_start": 0e-3,
+        "trigger_rising": true,
+        "trigger_offset": 130e-6,
+        "signal_length": 850e-6,
+        "template_name": "templates/eddystone.npy",
+        "min_correlation": 0.15,
+        "usrp_gain": 70,
+        "hackrf_gain": 0,
+        "hackrf_gain_if": 25,
+        "hackrf_gain_bb": 27
+    }
+}

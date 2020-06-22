@@ -1,3 +1,7 @@
+# Instructions
+
+[Detailed Instructions](https://eurecom-s3.github.io/screaming_channels/#Native)
+
 # Experiments with BLE Nano 2 #
 
 This directory contains scripts to reproduce our measurements. Make sure that

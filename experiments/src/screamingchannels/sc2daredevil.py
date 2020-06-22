@@ -1,20 +1,22 @@
-import sys
-import numpy as np
-import struct
-
-from binascii import unhexlify
 from os import chdir, getcwd
 from os.path import isfile, abspath
 
-from load import load_traces, load_all
+# from load import load_traces, load_all
+from load import generic_load
 
 def main(trace_directory, trace_name, number):
     trace_directory = abspath(trace_directory)
     ptfile = '%s/pt_%s.txt' % (trace_directory, trace_name)
 
-    pt_data = load_all(ptfile, number=number)[:-1]
-    textin = np.array(pt_data)
-    traces = load_traces('%s/avg_%s' % (trace_directory, trace_name), number)
+    # pt_data = load_all(ptfile, number=number)
+    # textin = np.array(pt_data)
+    # traces = load_traces('%s/avg_%s' % (trace_directory, trace_name),
+            # number,6849,7100)
+
+    fixed_key, plaintexts, keys, traces = generic_load(trace_directory,
+            trace_name, number, 0, 0, False, False, False, False, "")
+    textin = np.array(plaintexts)
+ 
 
     assert traces.shape[0] == textin.shape[0]
 

@@ -5,6 +5,11 @@
         "modulate": true
     },
     "collection": {
+        "channel": 0,
+        "hackrf_gain": 0,
+        "hackrf_gain_if": 35,
+        "hackrf_gain_bb": 39,
+        "usrp_gain": 40,
         "target_freq": 2.528e9,
         "sampling_rate": 5e6,
         "num_points": 1,
