@@ -25,7 +25,7 @@ setup(
         "pandas==0.22.0",
         "scikit-learn==0.20.3",
         "future==0.16.0",
-        "pycrypto==2.6.1",
+        "pycryptodome==3.9.7",
         "pyzmq==16.0.2",
         "peakutils==1.3.2",
         "tabulate==0.8.1",

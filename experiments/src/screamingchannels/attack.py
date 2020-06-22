@@ -863,8 +863,8 @@ def bruteforce(bit_bound_end):
  
     cipher = AES.new(_key, AES.MODE_ECB)
  
-    _ct1 = cipher.encrypt(pt1)
-    _ct2 = cipher.encrypt(pt2)
+    _ct1 = cipher.encrypt(_pt1)
+    _ct2 = cipher.encrypt(_pt2)
     
     ct1 = [ord(c) for c in _ct1]
     ct1 = np.array(ct1, dtype=ctypes.c_ubyte)
