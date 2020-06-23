@@ -22,7 +22,7 @@ RUN mkdir /home/screaming \
      && python2 setup.py develop
 
 # Install firmware
-ENV NORDIC_SEMI_SDK=/home/screaming/screaming_channel/firmware/nRF5_SDK_14.2.0_17b948a/
+ENV NORDIC_SEMI_SDK=/home/screaming/screaming_channels/firmware/nRF5_SDK_14.2.0_17b948a/
 
 RUN cd /home/screaming/screaming_channels/firmware/ \
     && wget https://developer.nordicsemi.com/nRF5_SDK/nRF5_SDK_v14.x.x/nRF5_SDK_14.2.0_17b948a.zip \
