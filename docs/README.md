@@ -6,7 +6,6 @@ Welcome to the **Screaming Channels** project!
 <!--side channels at large distance against mixed-signal chips*:-->
 > Screaming Channels are a novel type of (radio) side channel attacks at large
 > distance against mixed-signal chips used in modern connected devices.
-> [<em><small>More details.</small></em>](#Summary)
 <details>
     <summary>Expand</summary>
 <blockquote>
