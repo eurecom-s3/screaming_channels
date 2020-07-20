@@ -74,7 +74,8 @@
       </section>
       <footer>
         {% if site.owner_website %}
-        <p>This project is maintained by <a href="{{ site.owner_website }}">{{ site.github.owner_name }}</a></p>
+        <!--<p>This project is maintained by <a href="{{ site.owner_website }}">{{ site.github.owner_name }}</a></p>-->
+        <p>This project is maintained by <a href="{{ site.github.owner_url }}">{{ site.github.owner_name }}</a></p>
         {% else if site.github.is_project_page %}
         <p>This project is maintained by <a href="{{ site.github.owner_url }}">{{ site.github.owner_name }}</a></p>
         {% endif %}

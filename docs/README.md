@@ -2,11 +2,31 @@
 
 Welcome to the **Screaming Channels** project!
 
-This repository contains all that is needed to reproduce our findings on *radio
-side channels at large distance against mixed-signal chips*:
+<!--This repository contains all that is needed to reproduce our findings on *radio-->
+<!--side channels at large distance against mixed-signal chips*:-->
+> Screaming Channels are a novel type of (radio) side channel attacks at large
+> distance against mixed-signal chips used in modern connected devices.
+> [<em><small>More details.</small></em>](#Summary)
+<details>
+    <summary>Expand</summary>
+<blockquote>
+Modern connected devices require both computing and wireless communication
+capabilities. The mixed-signal architecture, which combines digital and
+analog/RF logic on the same silicon die, offers many advantages and is a
+popular choice. Unfortunately, the noisy digital activity can easily propagate
+to the noise-sensitive radio components (e.g., substrate coupling, power
+supply). As a consequence, the radio might pick-up, up-convert, amplify, and
+broadcast some sensitive information about the digital activity on the chip,
+making electromagnetic side-channel attacks possible at a potentially very
+large distance. We call this novel side-channel vector "screaming channels", in
+contrast to the low-power "whisper" of conventional electromagnetic side
+channels.
+</blockquote>
+</details>
+<br>
 
 <p align="center">
-  <img src="assets/figures/idea.jpg" width="80%" height="auto">
+  <img src="assets/figures/idea.jpg" width="60%" height="auto">
 </p>
 
 <!--![Alt Text](assets/figures/idea.jpg)-->
@@ -17,33 +37,75 @@ Modified with annotations.
 Original by [zeptobars][zeptobars].
 </small>
 
-> Modern connected devices require both computing and wireless communication
-> capabilities. The mixed-signal architecture, which combines digital and
-> analog/RF logic on the same silicon die, offers many advantages and is a
-> popular choice. Unfortunately, the noisy digital activity can easily propagate
-> to the noise-sensitive radio components (e.g., substrate coupling, power
-> supply). As a consequence, the radio might pick-up, up-convert, amplify, and
-> broadcast some sensitive information about the digital activity on the chip,
-> making electromagnetic side-channel attacks possible at a potentially very
-> large distance. We call this novel side-channel vector "screaming channels", in
-> contrast to the low-power "whisper" of conventional electromagnetic side
-> channels.
+## <a name="Publications"></a>Publications
 
-Currently two of the most interesting attacks are:
-* **Attack from 15m in an office environment** (Against TinyAES-128, reusing a profile built
-  much before on a different instance)
-* **Proof-of-concept attack against Google Eddystone beacons** (Against the
-  authentication protocol, unmodified demo, optimized code, frequency hopping enabled
-  but defeated with a trick, connection via cable)
+* ***<mark>New!</mark>*** **CHES 2020** [Paper][ches20_paper]
+  [Bibtex][ches20_bibtex]
+     * ***<span style="color:#859900">Google Bughunter Program, Honorable Mention</span>***
+     * Proof-of-concept attack against a real device:
+         * <mark>Attack against the authentication method of Google Eddystone
+           beacons.</mark>
+         * The problem of <mark>Frequency Hopping can be overcome</mark> using the channel map.
+     * Long-distance attacks in a real environment:
+         * <mark>Key-recovery up to 15m in an office, reusing a profile</mark>
+           built on a different instance, much before, in more convenient
+           conditions (connection via cable).
+         * Key-recovery in home environment with obstacles, leveraging
+           <mark>spatial diversity</mark>
+     * Attempt to attack the hardware AES block.
+     * Detailed analysis of the peculiar leak vector:
+         * <mark>Coexistence</mark> of (intended) radio signals and (unintended leakages).
+         * <mark>Distortion of the leak model, effects of distance and channel frequency</mark>.
+         * Attack techniques adapted to the channel: normalization (channel estimation), spatial diversity, profiled
+           correlation attacks, multivariate template attacks, key ranking.
+         * <mark>Profile reuse</mark>: profile in good conditions, reuse against a
+           different device instance, at larger distance, at a different
+           time.
 
-For more information you can also have a look at:
-
-* **CHES 2020** [Paper][ches20_paper]
-* **ACM CCS 2018** [Paper][ccs18_paper] [Bibtex][ccs18_bibtex]
+* **CCS 2018** [Paper][ccs18_paper] [Bibtex][ccs18_bibtex]
   [Slides][ccs18_slides] [Video][ccs18_video]
-* **Black Hat USA 2018**
-  [Slides][bhusa18_slides] [Video][bhusa18_video]
-* **Webpage** [News, coverage, prize, invited talks][webpage] 
+    * ***<span style="color:#859900">3rd place at the CSAW Europe 2018 applied research competition</span>***
+    * The idea: the coupling between digital and analog components in mixed-signal
+      chips can have some security implications.
+    * Correlation and Template Attacks:
+        * Key-recovery at 10m in an anechoic chamber against tinyAES.
+        * Key-recovery 1m in an office environment against tinyAES and mbedTLS.
+
+* **Black Hat USA 2018** [Slides][bhusa18_slides] [Video][bhusa18_video]
+
+<!--Currently two of the most interesting attacks are:-->
+<!--* **Attack from 15m in an office environment** (Against TinyAES-128, reusing a profile built-->
+  <!--much before on a different instance)-->
+<!--* **Proof-of-concept attack against Google Eddystone beacons** (Against the-->
+  <!--authentication protocol, unmodified demo, optimized code, frequency hopping enabled-->
+  <!--but defeated with a trick, connection via cable)-->
+
+<!--For more information you can also have a look at:-->
+
+<!--* **CHES 2020** [Paper][ches20_paper]-->
+<!--* **ACM CCS 2018** [Paper][ccs18_paper] [Bibtex][ccs18_bibtex]-->
+  <!--[Slides][ccs18_slides] [Video][ccs18_video]-->
+<!--* **Black Hat USA 2018**-->
+  <!--[Slides][bhusa18_slides] [Video][bhusa18_video]-->
+<!--* **Webpage** [News, coverage, prize, invited talks][webpage] -->
+
+## <a name="Coverage"></a>Coverage
+
+[Le Monde][3], [The Register][4], [Hackaday][5],
+[Hackaday][6], [Security Info][7], [Tom's Hardware][8], [threatpost][9].
+
+## <a name="Talks"></a>Talks and Presentations
+
+* ***Black Hat USA 2018*** ([Giovanni Camurati][gc] and [Marius Muench][mm]) [Slides][bhusa18_slides] [Video][bhusa18_video]
+* ***ACM CCS 2018*** ([Giovanni Camurati][gc])
+* ***CSAW Europe 2018*** ([Sebastian Poeplau][sp]) <mark>3rd place at the Applied Research
+  Competition</mark>
+* ***GreHack 2018*** ([Marius Muench][mm]) [Video][grehack18_video]
+* ***Cryptacus 2018*** ([Aurélien Francillon][af])
+* ***RESSI 2019*** ([Giovanni Camurati][mm])
+* ***Journée thématique « Sécurité des systèmes électroniques et communicants »
+  2019*** ([Giovanni Camurati][gc])
+* ***PHISIC 2019*** ([Giovanni Camurati][gc])
 
 [<em><small>Back to top</small></em>]({{ "/" | absolute_url }})
 
@@ -2769,7 +2831,8 @@ along with screaming_channels.  If not, see <http://www.gnu.org/licenses/>.
 <!--[chess2020_traces_3.4.4]: dummy-->
 <!--[chess2020_traces_4.2]: dummy-->
 
-[ches20_paper]: https://doi.org/10.13154/tches.v2020.i3.358-401
+[ches20_paper]: http://www.s3.eurecom.fr/docs/ches20_camurati.pdf
+[ches20_bibtex]: http://s3.eurecom.fr/bibs/ches20_camurati.bib
 
 [ccs18_paper]: http://s3.eurecom.fr/docs/ccs18_camurati.pdf
 [ccs18_bibtex]: http://s3.eurecom.fr/bibs/ccs18_camurati.bib
@@ -2779,6 +2842,8 @@ along with screaming_channels.  If not, see <http://www.gnu.org/licenses/>.
 
 [bhusa18_slides]: http://s3.eurecom.fr/slides/bh18us_camurati.slides.pdf
 [bhusa18_video]: https://youtu.be/K7wqwOzD1Yw
+
+[grehack18_video]: https://youtu.be/vtcoZYS_C08
 
 [webpage]: http://s3.eurecom.fr/tools/screaming_channels/
 
@@ -2803,3 +2868,13 @@ along with screaming_channels.  If not, see <http://www.gnu.org/licenses/>.
 [vagrant]: https://www.vagrantup.com/
 [virtualbox]: https://www.virtualbox.org/
 [vagrant-synced-folders]: https://www.vagrantup.com/docs/synced-folders/
+
+<!--coverage-->
+[3]: https://www.lemonde.fr/pixels/article/2018/07/25/les-tres-indiscretes-puces-des-objets-connectes_5335566_4408996.html
+[4]: https://www.theregister.co.uk/2018/07/27/screaming_channels_attack/
+[5]: https://hackaday.com/2018/07/27/screaming-channels-attack-rf-security/
+[6]: https://hackaday.com/2018/07/30/side-channel-attacks-against-mixed-signal-microcontrollers/
+[7]: https://www.securityinfo.it/2018/07/31/attacco-side-channel-tramite-onde-radio-i-dati-si-leggono-anche-a-10-metri/
+[8]: https://www.tomshw.it/altro/nuovo-attacco-dati-rubati-via-radio-a-10-metri-di-distanza
+[9]: https://threatpost.com/mixed-signal-microcontrollers-open-to-side-channel-attacks/134793/
+
