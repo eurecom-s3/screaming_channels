@@ -39,7 +39,7 @@ Original by [zeptobars][zeptobars].
 ## <a name="Publications"></a>Publications
 
 * ***<mark>New!</mark>*** **CHES 2020** [Paper][ches20_paper]
-  [Bibtex][ches20_bibtex]
+  [Bibtex][ches20_bibtex] [Slides][ches20_slides] [Video][ches20_video]
      * ***<span style="color:#859900">Google Bughunter Program, Honorable Mention</span>***
      * Proof-of-concept attack against a real device:
          * <mark>Attack against the authentication method of Google Eddystone
@@ -2832,6 +2832,8 @@ along with screaming_channels.  If not, see <http://www.gnu.org/licenses/>.
 
 [ches20_paper]: http://www.s3.eurecom.fr/docs/ches20_camurati.pdf
 [ches20_bibtex]: http://s3.eurecom.fr/bibs/ches20_camurati.bib
+[ches20_video]: https://youtu.be/Xb9xGwiOYkY
+[ches20_slides]: https://iacr.org/submit/files/slides/2020/tches/ches2020/30395/slides.pdf
 
 [ccs18_paper]: http://s3.eurecom.fr/docs/ccs18_camurati.pdf
 [ccs18_bibtex]: http://s3.eurecom.fr/bibs/ccs18_camurati.bib
