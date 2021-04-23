@@ -303,7 +303,8 @@ experiment.
    1. Using the [HCI BLE dongle demo][zephyr_hci] with a [PCA10056][pca10056].
    Follow the installation guide of [Zephyr][zephyr], and then:
    ```
-   west build -b nrf52_pca10056 samples/bluetooth/hci_uart
+   #west build -b nrf52_pca10056 samples/bluetooth/hci_uart
+   west build -b nrf52840dk_nrf52840 samples/bluetooth/hci_uart
    west flash
    ```
 
