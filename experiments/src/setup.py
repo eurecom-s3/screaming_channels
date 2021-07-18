@@ -20,6 +20,7 @@ setup(
         "enum34",
         "pmt==0.0.3",
         "pyts==0.9.0",
+        "llvmlite==0.30.0",
         "numba==0.46.0",
         "statsmodels==0.8.0",
         "pandas==0.22.0",
