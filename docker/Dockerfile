@@ -34,9 +34,11 @@ RUN cd /home/screaming/screaming_channels/firmware/ \
 
 # Install nordic tools
 RUN cd /home/screaming \
-    && wget https://www.nordicsemi.com/-/media/Software-and-other-downloads/Desktop-software/nRF-command-line-tools/sw/Versions-10-x-x/nRFCommandLineTools1060Linuxamd64tar.gz \
-    && tar xvzf nRFCommandLineTools1060Linuxamd64tar.gz \
-    && dpkg -i nRF-Command-Line-Tools_10_6_0_Linux-amd64.deb
+    && wget https://www.nordicsemi.com/-/media/Software-and-other-downloads/Desktop-software/nRF-command-line-tools/sw/Versions-10-x-x/10-13-0/nRF-Command-Line-Tools_10_13_0_Linux64.zip \
+    && unzip nRF-Command-Line-Tools_10_13_0_Linux64.zip \
+    && cd nRF-Command-Line-Tools_10_13_0_Linux64 \
+    && tar -xvzf nRF-Command-Line-Tools_10_13_0_Linux-amd64.tar.gz \
+    && dpkg -i nRF-Command-Line-Tools_10_13_0_Linux-amd64.deb
 
 # Install python_hel
 RUN apt-get install -yq \
