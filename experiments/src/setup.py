@@ -30,7 +30,8 @@ setup(
         "pyzmq==16.0.2",
         "peakutils==1.3.2",
         "tabulate==0.8.1",
-        "kiwisolver==1.1.0"
+        "kiwisolver==1.1.0",
+        "pyparsing==2.4.7"
 
 
 # to use system packages
