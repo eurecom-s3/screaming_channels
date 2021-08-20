@@ -16,7 +16,7 @@ from Crypto.Cipher import AES
 import zmq
 import subprocess
 
-from gnuradio import blocks, gr, uhd
+from gnuradio import blocks, gr, uhd, iio
 import osmosdr
 
 import numpy as np
@@ -26,7 +26,7 @@ import analyze
 logging.basicConfig()
 l = logging.getLogger('reproduce')
 
-Radio = enum.Enum("Radio", "USRP USRP_mini USRP_B210 USRP_B210_MIMO HackRF bladeRF")
+Radio = enum.Enum("Radio", "USRP USRP_mini USRP_B210 USRP_B210_MIMO HackRF bladeRF PlutoSDR")
 FirmwareMode = collections.namedtuple(
     "FirmwareMode",
     [
@@ -777,6 +777,15 @@ class GNUradio(gr.top_block):
                 radio_block.set_bb_gain(hackrf_gain_bb, 0)
             radio_block.set_antenna('', 0)
             radio_block.set_bandwidth(3e6, 0)
+            
+        elif RADIO == Radio.PlutoSDR:
+            # TODO: Handle PlutoSDR by USB and IP URI.
+            # TODO: Get params from the configuration file.
+            radio_block = iio.pluto_source('usb:2.19.5',
+                                           int(frequency),
+                                           int(sampling_rate), 1 - 1,
+                                           int(3e6), 0x8000, True,
+                                           True, True, "manual", 64, '', True)
         else:
             raise Exception("Radio type %s is not supported" % RADIO)
 
