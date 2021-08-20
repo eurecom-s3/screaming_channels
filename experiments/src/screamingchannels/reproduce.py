@@ -16,7 +16,7 @@ from Crypto.Cipher import AES
 import zmq
 import subprocess
 
-from gnuradio import blocks, gr, uhd
+from gnuradio import blocks, gr, uhd, iio
 import osmosdr
 
 import numpy as np
@@ -26,7 +26,7 @@ import analyze
 logging.basicConfig()
 l = logging.getLogger('reproduce')
 
-Radio = enum.Enum("Radio", "USRP USRP_mini USRP_B210 USRP_B210_MIMO HackRF bladeRF")
+Radio = enum.Enum("Radio", "USRP USRP_mini USRP_B210 USRP_B210_MIMO HackRF bladeRF PlutoSDR")
 FirmwareMode = collections.namedtuple(
     "FirmwareMode",
     [
@@ -127,6 +127,8 @@ CollectionConfig = collections.namedtuple(
         "hackrf_gain_bb",
         # Gain IF.
         "hackrf_gain_if",
+        # Gain.
+        "plutosdr_gain",
         # Gain
         "usrp_gain",
         # Keep all raw
@@ -170,7 +172,7 @@ class EnumType(click.Choice):
 @click.option("-r", "--radio", default="USRP", type=EnumType(Radio), show_default=True,
               help="The type of SDR to use.")
 @click.option("--radio-address", default="10.0.3.40",
-              help="Address of the radio (USRP only).")
+              help="Address of the radio (X.X.X.X for USRP, ip:X.X.X.X or usb:X.X.X for PlutoSDR).")
 @click.option("-l", "--loglevel", default="INFO", show_default=True,
               help="The loglevel to be used ([DEBUG|INFO|WARNING|ERROR|CRITICAL])")
 @click.option("-o", "--outfile", default="/tmp/time", type=click.Path(), show_default=True,
@@ -302,6 +304,7 @@ def collect(config, target_path, name, average_out, plot, max_power, raw):
     cfg_dict["collection"].setdefault(u'hackrf_gain', 0)
     cfg_dict["collection"].setdefault(u'hackrf_gain_bb', 44)
     cfg_dict["collection"].setdefault(u'hackrf_gain_if', 40)
+    cfg_dict["collection"].setdefault(u'plutosdr_gain', 64)
     cfg_dict["collection"].setdefault(u'usrp_gain', 40)
     cfg_dict["collection"].setdefault(u'keep_all', False)
     cfg_dict["collection"].setdefault(u'channel', 0)
@@ -436,7 +439,8 @@ def collect(config, target_path, name, average_out, plot, max_power, raw):
                             collection_config.usrp_gain,
                             collection_config.hackrf_gain,
                             collection_config.hackrf_gain_if,
-                            collection_config.hackrf_gain_bb)
+                            collection_config.hackrf_gain_bb,
+                            collection_config.plutosdr_gain)
         # with click.progressbar(plaintexts) as bar:
             # for index, plaintext in enumerate(bar):
         with click.progressbar(range(num_points)) as bar:
@@ -550,6 +554,7 @@ def eddystone_unlock_collect(config, target_path, name, average_out, plot, max_p
     cfg_dict["collection"].setdefault(u'hackrf_gain', 0)
     cfg_dict["collection"].setdefault(u'hackrf_gain_bb', 44)
     cfg_dict["collection"].setdefault(u'hackrf_gain_if', 40)
+    cfg_dict["collection"].setdefault(u'plutosdr_gain', 64)
     cfg_dict["collection"].setdefault(u'usrp_gain', 40)
     cfg_dict["collection"].setdefault(u'keep_all', False)
     cfg_dict["collection"].setdefault(u'channel', 0)
@@ -601,7 +606,8 @@ def eddystone_unlock_collect(config, target_path, name, average_out, plot, max_p
                         collection_config.usrp_gain,
                         collection_config.hackrf_gain,
                         collection_config.hackrf_gain_if,
-                        collection_config.hackrf_gain_bb)
+                        collection_config.hackrf_gain_bb,
+                        collection_config.plutosdr_gain)
     plaintexts = []
     f = open(path.join(target_path, 'pt_%s.txt' % name), 'w')
     cnt = 0
@@ -726,7 +732,7 @@ def _open_serial_port():
 class GNUradio(gr.top_block):
     """GNUradio capture from SDR to file."""
     def __init__(self, frequency=2.464e9, sampling_rate=5e6, conventional=False,
-            usrp_gain=40, hackrf_gain=0, hackrf_gain_if=40, hackrf_gain_bb=44):
+                 usrp_gain=40, hackrf_gain=0, hackrf_gain_if=40, hackrf_gain_bb=44, plutosdr_gain=64):
         gr.top_block.__init__(self, "Top Block")
 
         if RADIO in (Radio.USRP, Radio.USRP_mini, Radio.USRP_B210):
@@ -777,6 +783,14 @@ class GNUradio(gr.top_block):
                 radio_block.set_bb_gain(hackrf_gain_bb, 0)
             radio_block.set_antenna('', 0)
             radio_block.set_bandwidth(3e6, 0)
+            
+        elif RADIO == Radio.PlutoSDR:
+            bandwidth = 3e6
+            radio_block = iio.pluto_source(RADIO_ADDRESS.encode("ascii"),
+                                           int(frequency), int(sampling_rate),
+                                           1 - 1, int(bandwidth), 0x8000, True,
+                                           True, True, "manual", plutosdr_gain,
+                                           '', True)
         else:
             raise Exception("Radio type %s is not supported" % RADIO)
 

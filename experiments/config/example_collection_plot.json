@@ -9,6 +9,7 @@
         "hackrf_gain": 0,
         "hackrf_gain_if": 35,
         "hackrf_gain_bb": 39,
+        "plutosdr_gain": 64,
         "usrp_gain": 40,
         "target_freq": 2.528e9,
         "sampling_rate": 5e6,
