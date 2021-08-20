@@ -172,7 +172,7 @@ class EnumType(click.Choice):
 @click.option("-r", "--radio", default="USRP", type=EnumType(Radio), show_default=True,
               help="The type of SDR to use.")
 @click.option("--radio-address", default="10.0.3.40",
-              help="Address of the radio (USRP only).")
+              help="Address of the radio (X.X.X.X for USRP, ip:X.X.X.X or usb:X.X.X for PlutoSDR).")
 @click.option("-l", "--loglevel", default="INFO", show_default=True,
               help="The loglevel to be used ([DEBUG|INFO|WARNING|ERROR|CRITICAL])")
 @click.option("-o", "--outfile", default="/tmp/time", type=click.Path(), show_default=True,
@@ -786,12 +786,11 @@ class GNUradio(gr.top_block):
             
         elif RADIO == Radio.PlutoSDR:
             bandwidth = 3e6
-            # TODO: Handle PlutoSDR by USB and IP URI.
-            radio_block = iio.pluto_source('usb:2.19.5', int(frequency),
-                                           int(sampling_rate), 1 - 1,
-                                           int(bandwidth), 0x8000, True, True,
-                                           True, "manual", plutosdr_gain, '',
-                                           True)
+            radio_block = iio.pluto_source(RADIO_ADDRESS.encode("ascii"),
+                                           int(frequency), int(sampling_rate),
+                                           1 - 1, int(bandwidth), 0x8000, True,
+                                           True, True, "manual", plutosdr_gain,
+                                           '', True)
         else:
             raise Exception("Radio type %s is not supported" % RADIO)
 
