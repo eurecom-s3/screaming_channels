@@ -23,6 +23,7 @@
         "usrp_gain": 70,
         "hackrf_gain": 0,
         "hackrf_gain_if": 25,
-        "hackrf_gain_bb": 27
+        "hackrf_gain_bb": 27,
+        "plutosdr_gain": 64
     }
 }
