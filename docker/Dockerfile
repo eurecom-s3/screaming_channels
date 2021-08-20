@@ -5,8 +5,8 @@ ENV DEBIAN_FRONTEND noninteractive
 # Prepare the system
 RUN apt-get update && apt-get install -yq \
     git vim gnuradio python-pip gr-osmosdr \
-    minicom hackrf gqrx-sdr \
-    xauth sudo wget unzip \
+    minicom hackrf gqrx-sdr gr-iio \
+    xauth sudo wget unzip libiio0 libiio-utils \
     udiskie gcc-arm-none-eabi \
     python3-pip bluez && \
     pip install setuptools && \
