@@ -13,7 +13,7 @@ setup(
     },
     install_requires=[
         "click==6.7",
-        "numpy==1.16.6",
+        "numpy==1.22.0",
         "scipy==1.1.0",
         "pyserial==3.4",
         "matplotlib==2.2.3",
