@@ -38,7 +38,12 @@ Original by [zeptobars][zeptobars].
 
 ## <a name="Publications"></a>Publications
 
-* ***<mark>New!</mark>*** **CHES 2020** [Paper][ches20_paper]
+* ***<mark>New!</mark>*** **ACSAC 2024: BlueScream: Screaming Channels on Bluetooth Low Energy** [Paper][acsac24_paper]
+  [Bibtex][acsac24_bibtex] [Slides][acsac24_slides] [Code][acsac24_code]
+  * Attack on a real bluetooth LE communication
+  * Protocol layer manipulation to force the BLE device to leak the Long Term Key
+  
+* **CHES 2020** [Paper][ches20_paper]
   [Bibtex][ches20_bibtex] [Slides][ches20_slides] [Video][ches20_video]
      * ***<span style="color:#859900">Google Bughunter Program, Honorable Mention</span>***
      * Proof-of-concept attack against a real device:
@@ -2830,6 +2835,12 @@ along with screaming_channels.  If not, see <http://www.gnu.org/licenses/>.
 <!--[chess2020_traces_3.4.3]: dummy-->
 <!--[chess2020_traces_3.4.4]: dummy-->
 <!--[chess2020_traces_4.2]: dummy-->
+
+
+[acsac24_bibtex]: https://www.s3.eurecom.fr/bibs/acsac24_ayoub.bib
+[acsac24_paper]: https://s3.eurecom.fr/docs/acsac24_ayoub.pdf
+[acsac24_slides]: https://www.acsac.org/2024/files/web/slides/ayoub-103-bluescream.pdf
+[acsac24_code]: https://github.com/pierreay/bluescream
 
 [ches20_paper]: http://www.s3.eurecom.fr/docs/ches20_camurati.pdf
 [ches20_bibtex]: http://s3.eurecom.fr/bibs/ches20_camurati.bib
